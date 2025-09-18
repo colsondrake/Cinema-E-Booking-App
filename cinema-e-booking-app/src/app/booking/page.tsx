@@ -16,9 +16,15 @@ interface Movie {
 }
 
 const TICKET_TYPES = [
-    { label: "Adult", value: "adult", price: 12 },
-    { label: "Child", value: "child", price: 8 },
-    { label: "Senior", value: "senior", price: 9 },
+    // 
+    // { label: "Adult", value: "adult", price: 12 },
+    // { label: "Child", value: "child", price: 8 },
+    // { label: "Senior", value: "senior", price: 9 },
+    // PRICE (CTRL + F for 'PRICE' to find all necessary changes)
+    { label: "Adult", value: "adult" },
+    { label: "Child", value: "child" },
+    { label: "Senior", value: "senior" },
+
 ];
 
 const FOOD_OPTIONS = [
@@ -47,12 +53,14 @@ export default function Page() {
         }
     }, []);
 
-    const ticketPrice = TICKET_TYPES.find(t => t.value === ticketType)?.price || 0;
+    // PRICE
+    // const ticketPrice = TICKET_TYPES.find(t => t.value === ticketType)?.price || 0;
     const foodTotal = Object.entries(foodSelections).reduce((sum, [food, qty]) => {
         const foodPrice = FOOD_OPTIONS.find(f => f.value === food)?.price || 0;
         return sum + foodPrice * qty;
     }, 0);
-    const total = ticketPrice * ticketQty + foodTotal;
+    // PRICE
+    // const total = ticketPrice * ticketQty + foodTotal;
 
     const handleFoodChange = (food: string, qty: number) => {
         setFoodSelections(prev => ({ ...prev, [food]: qty }));
@@ -125,7 +133,9 @@ export default function Page() {
                                                 onChange={e => setTicketType(e.target.value)}
                                             >
                                                 {TICKET_TYPES.map(t => (
-                                                    <option key={t.value} value={t.value}>{t.label} (${t.price})</option>
+                                                    // <option key={t.value} value={t.value}>{t.label} (${t.price})</option>
+                                                    // PRICE
+                                                    <option key={t.value} value={t.value}>{t.label}</option>
                                                 ))}
                                             </select>
                                         </div>
@@ -147,7 +157,9 @@ export default function Page() {
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             {FOOD_OPTIONS.map(food => (
                                                 <div key={food.value} className="flex flex-col items-center">
-                                                    <span className="mb-1">{food.label} (${food.price})</span>
+                                                    {/* <span className="mb-1">{food.label} (${food.price})</span> */}
+                                                    {/* PRICE */}
+                                                    <span className="mb-1">{food.label}</span>
                                                     <input
                                                         type="number"
                                                         min={0}
@@ -161,12 +173,13 @@ export default function Page() {
                                         </div>
                                     </div>
                                     <div className="flex flex-col md:flex-row md:justify-between items-center gap-4 border-t border-gray-200 dark:border-gray-700 pt-4">
-                                        <div className="text-lg font-semibold text-blue-700 dark:text-blue-300">
+                                        {/* <div className="text-lg font-semibold text-blue-700 dark:text-blue-300">
                                             Total: <span className="text-2xl">${total}</span>
-                                        </div>
+                                        </div> */}
+                                        {/* PRICE */}
                                         <button
                                             type="submit"
-                                            className="px-8 py-3 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors duration-200"
+                                            className="px-8 py-3 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors duration-200 cursor-pointer"
                                         >
                                             Book Now
                                         </button>

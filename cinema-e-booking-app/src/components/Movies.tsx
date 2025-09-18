@@ -1,8 +1,10 @@
 'use client'
 
+// Import Statements
 import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 
+// Movie Categories
 export const MOVIE_CATEGORIES = [
   { label: "All", value: "All" },
   { label: "Action", value: "Action" },
