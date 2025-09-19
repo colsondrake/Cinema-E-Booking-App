@@ -7,7 +7,7 @@ import Link from "next/link";
 const AuthNavMenu = () => (
 	<div className="flex items-center space-x-2">
 		<Link href="/shopping-cart">
-			<button className="bg-blue-600 text-white hover:bg-opacity-90 rounded-lg px-4 py-2">
+			<button className="bg-blue-600 text-white hover:bg-opacity-90 rounded-lg px-4 py-2 cursor-pointer">
 				<FontAwesomeIcon icon={faShoppingCart} />
 			</button>
 		</Link>
