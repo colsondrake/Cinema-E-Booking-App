@@ -3,30 +3,47 @@
 import React, { useEffect, useState } from "react";
 
 interface Movie {
-  id: number;
-  image: string;
+  id: string;
   title: string;
-  categories: string[];
+  director: string;
+  year: number;
+  genre: string;
+  rating: string;
   description: string;
-  status: string;
+  posterUrl: string;
+  trailerUrl?: string;
   showtimes: string[];
-  rating: number;
-  trailerUrl?: string; // Optional trailer URL
 }
 
 const MovieDetails = () => {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
 
+
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setLoading(true);
-      const stored = sessionStorage.getItem("selectedMovie");
-      if (stored) {
-        setMovie(JSON.parse(stored));
+    const fetchMovie = async () => {
+      if (typeof window !== "undefined") {
+        setLoading(true);
+        const movieId = sessionStorage.getItem("selectedMovieId");
+        if (movieId) {
+          try {
+            const res = await fetch(`http://localhost:8080/api/movies/${movieId}`);
+            if (res.ok) {
+              const data = await res.json();
+              setMovie(data);
+            } else {
+              setMovie(null);
+            }
+          } catch (err) {
+            setMovie(null);
+          }
+        } else {
+          setMovie(null);
+        }
+        setLoading(false);
       }
-      setLoading(false);
-    }
+    };
+    fetchMovie();
   }, []);
 
   if (loading) {
@@ -58,7 +75,7 @@ const MovieDetails = () => {
             <div className="grid grid-cols-12 gap-8">
               <div className="col-span-12 md:col-span-6 md:py-12 flex flex-col items-center gap-6">
                 <img
-                  src={movie.image}
+                  src={movie.posterUrl}
                   alt={movie.title}
                   className="rounded-xl w-full max-w-md mx-auto shadow-lg"
                 />
@@ -72,7 +89,7 @@ const MovieDetails = () => {
                         width="100%"
                         height="250"
                         className="rounded-lg w-full h-64 border border-gray-300 dark:border-gray-700"
-                        poster={movie.image}
+                        poster={movie.posterUrl}
                       >
                         <source src={movie.trailerUrl} />
                         Your browser does not support the video tag.
@@ -99,18 +116,20 @@ const MovieDetails = () => {
                     <span className="font-semibold">Description: </span>{movie.description}
                   </div>
                   <div className="mb-2">
-                    <span className="font-semibold">Categories: </span>
-                    {movie.categories.join(", ")}
+                    <span className="font-semibold">Genre: </span>
+                    {movie.genre}
                   </div>
                   <div className="mb-2">
-                    <span className="font-semibold">Status: </span>
-                    <span className={movie.status === 'running' ? 'text-green-600' : 'text-yellow-600'}>
-                      {movie.status.charAt(0).toUpperCase() + movie.status.slice(1)}
-                    </span>
+                    <span className="font-semibold">Director: </span>
+                    {movie.director}
+                  </div>
+                  <div className="mb-2">
+                    <span className="font-semibold">Year: </span>
+                    {movie.year}
                   </div>
                   <div className="mb-2">
                     <span className="font-semibold">Rating: </span>
-                    <span className="text-yellow-500">{movie.rating} / 5</span>
+                    <span className="text-yellow-500">{movie.rating}</span>
                   </div>
                   <div className="mb-2">
                     <span className="font-semibold">Showtimes: </span>
@@ -121,7 +140,7 @@ const MovieDetails = () => {
                           className="px-3 py-1 rounded bg-blue-500 text-white text-xs hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
                           onClick={() => {
                             if (typeof window !== "undefined") {
-                              sessionStorage.setItem("selectedMovie", JSON.stringify(movie));
+                              sessionStorage.setItem("selectedMovieId", movie.id);
                               sessionStorage.setItem("selectedShowtime", showtime);
                             }
                             window.location.href = "/booking";

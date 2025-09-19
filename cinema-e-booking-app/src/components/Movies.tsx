@@ -1,202 +1,69 @@
 'use client'
 
-// Import Statements
-import { useRouter } from 'next/navigation'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-// Movie Categories
-export const MOVIE_CATEGORIES = [
-  { label: "All", value: "All" },
-  { label: "Action", value: "Action" },
-  { label: "Drama", value: "Drama" },
-  { label: "Comedy", value: "Comedy" },
-  { label: "Romance", value: "Romance" },
-  { label: "Sci-Fi", value: "Sci-Fi" },
-];
-
-export const MOVIE_LIST = [
-  {
-    id: 1,
-    image: "https://cdn.easyfrontend.com/pictures/portfolio/portfolio12.jpg",
-    title: "Movie 1",
-    categories: ["Action"],
-    description: "An action-packed adventure with stunning visuals.",
-    status: "running",
-    showtimes: ["12:00 PM", "3:00 PM", "6:00 PM", "9:00 PM"],
-    rating: 4.5,
-  },
-  {
-    id: 2,
-    image: "https://cdn.easyfrontend.com/pictures/portfolio/portfolio13.jpg",
-    title: "Movie 2",
-    categories: ["Drama"],
-    description: "A moving drama about family and sacrifice.",
-    status: "running",
-    showtimes: ["1:00 PM", "4:00 PM", "7:00 PM"],
-    rating: 4.2,
-  },
-  {
-    id: 3,
-    image: "https://cdn.easyfrontend.com/pictures/portfolio/portfolio14.jpg",
-    title: "Movie 3",
-    categories: ["Comedy"],
-    description: "A hilarious comedy that will leave you in stitches.",
-    status: "coming-soon",
-    showtimes: ["Coming Soon"],
-    rating: 4.0,
-  },
-  {
-    id: 4,
-    image: "https://cdn.easyfrontend.com/pictures/portfolio/portfolio15.jpg",
-    title: "Movie 4",
-    categories: ["Romance"],
-    description: "A heartwarming romance for all ages.",
-    status: "running",
-    showtimes: ["11:00 AM", "2:00 PM", "5:00 PM"],
-    rating: 4.7,
-  },
-  {
-    id: 5,
-    image: "https://cdn.easyfrontend.com/pictures/portfolio/portfolio16.jpg",
-    title: "Movie 5",
-    categories: ["Sci-Fi"],
-    description: "A sci-fi epic that explores the unknown.",
-    status: "coming-soon",
-    showtimes: ["Coming Soon"],
-    rating: 4.3,
-  },
-  {
-    id: 6,
-    image: "https://cdn.easyfrontend.com/pictures/portfolio/portfolio17.jpg",
-    title: "Movie 6",
-    categories: ["Action"],
-    description: "Another thrilling action movie.",
-    status: "running",
-    showtimes: ["10:30 AM", "1:30 PM", "4:30 PM", "7:30 PM"],
-    rating: 4.1,
-  },
-  {
-    id: 7,
-    image: "https://cdn.easyfrontend.com/pictures/portfolio/portfolio18.jpg",
-    title: "Movie 7",
-    categories: ["Comedy"],
-    description: "A comedy with a twist.",
-    status: "coming-soon",
-    showtimes: ["Coming Soon"],
-    rating: 3.9,
-  },
-  {
-    id: 8,
-    image: "https://cdn.easyfrontend.com/pictures/portfolio/portfolio19.jpg",
-    title: "Movie 8",
-    categories: ["Drama"],
-    description: "A drama that tugs at your heartstrings.",
-    status: "running",
-    showtimes: ["12:30 PM", "3:30 PM", "6:30 PM"],
-    rating: 4.6,
-  },
-  {
-    id: 9,
-    image: "https://cdn.easyfrontend.com/pictures/portfolio/portfolio20.jpg",
-    title: "Movie 9",
-    categories: ["Romance"],
-    description: "A romantic tale for the ages.",
-    status: "coming-soon",
-    showtimes: ["Coming Soon"],
-    rating: 4.4,
-  },
-];
+type Movie = {
+  id: string;
+  title: string;
+  director: string;
+  year: number;
+  genre: string;
+  rating: string;
+  description: string;
+  posterUrl: string;
+  trailerUrl: string;
+  showtimes: string[];
+};
 
 const Movies = () => {
   const router = useRouter();
-  const [activeCategory, setActiveCategory] = useState<string>("All");
-  const [search, setSearch] = useState<string>("");
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [genre, setGenre] = useState("");
 
-  // Filter movies by category and search
-  const filteredMovies = MOVIE_LIST.filter(movie => {
-    const matchesCategory =
-      activeCategory === "All" ||
-      movie.categories.includes(activeCategory);
-    const matchesSearch =
-      movie.title.toLowerCase().includes(search.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  // Fetch movies with optional search and genre filters
+  useEffect(() => {
+    const fetchMovies = async () => {
 
-  // Divide into two sections
-  const runningMovies = filteredMovies.filter(m => m.status === "running");
-  const comingSoonMovies = filteredMovies.filter(m => m.status === "coming-soon");
+      setLoading(true);
+      setError(null);
 
-  // Card component for reuse
-  const MovieCard = (movie: typeof MOVIE_LIST[number]) => (
-    <div className="col-span-6 md:col-span-3 xl:col-span-1 flex justify-center" key={movie.id}>
-      <div
-        className="w-full max-w-[260px] h-[420px] flex flex-col justify-between rounded-xl overflow-hidden border border-white dark:border-[#17233a] p-1 cursor-pointer bg-white dark:bg-[#17233a] shadow transition-transform duration-200 hover:-translate-y-2 hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-        onClick={() => {
-          if (typeof window !== "undefined") {
-            sessionStorage.setItem("selectedMovie", JSON.stringify(movie));
-          }
-          router.push(`/movie-details/${movie.id}`);
-        }}
-        tabIndex={0}
-        onKeyDown={e => {
-          if (e.key === "Enter" || e.key === " ") {
-            if (typeof window !== "undefined") {
-              sessionStorage.setItem("selectedMovie", JSON.stringify(movie));
-            }
-            router.push(`/movie-details/${movie.id}`);
-          }
-        }}
-        role="button"
-        aria-label={`View details for ${movie.title}`}
-      >
-        <img
-          src={movie.image}
-          alt={movie.title}
-          className="w-full h-[160px] object-cover rounded-xl mx-auto"
-        />
-        <div className="mt-4 flex-1 flex flex-col justify-between">
-          <div>
-            <h5 className="text-xl font-medium mb-1 text-center">
-              {movie.title}
-            </h5>
-            <p className="mb-0 text-sm text-gray-500 dark:text-gray-300 text-center">
-              {movie.categories.join(", ")}
-            </p>
-            <div className="mt-2 text-center">
-              <span className="font-semibold text-sm text-blue-600 dark:text-blue-300">Rating:</span>
-              <span className="ml-1 text-sm text-yellow-500 dark:text-yellow-400">{movie.rating} / 5</span>
-            </div>
-            <div className="mt-2 text-center">
-              <span className="font-semibold text-sm text-blue-600 dark:text-blue-300">Description:</span>
-              <p className="text-sm text-gray-700 dark:text-gray-200 mt-1 line-clamp-3">{movie.description}</p>
-            </div>
-          </div>
-          <div className="mt-2">
-            <span className="font-semibold text-sm text-blue-600 dark:text-blue-300">Showtimes:</span>
-            <div className="flex flex-wrap gap-2 mt-1">
-              {movie.showtimes.map((showtime: string, idx: number) => (
-                <button
-                  key={idx}
-                  className="px-3 py-1 rounded bg-blue-500 text-white text-xs hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
-                  onClick={e => {
-                    e.stopPropagation();
-                    if (typeof window !== "undefined") {
-                      sessionStorage.setItem("selectedMovie", JSON.stringify(movie));
-                      sessionStorage.setItem("selectedShowtime", showtime);
-                    }
-                    router.push("/booking");
-                  }}
-                  tabIndex={0}
-                >
-                  {showtime}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+      let url = "http://localhost:8080/api/movies";
+      if (search && genre) {
+        url = `http://localhost:8080/api/movies/search?title=${encodeURIComponent(search)}`;
+      } else if (search) {
+        url = `http://localhost:8080/api/movies/search?title=${encodeURIComponent(search)}`;
+      } else if (genre) {
+        url = `http://localhost:8080/api/movies/filter?genre=${encodeURIComponent(genre)}`;
+      }
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Failed to fetch movies");
+        let data = await res.json();
+        // If both search and genre, filter genre on frontend
+        if (search && genre) {
+          data = data.filter((m: Movie) => m.genre.toLowerCase() === genre.toLowerCase());
+        }
+        setMovies(data);
+      } catch (err: any) {
+        setError(err.message || "Unknown error");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMovies();
+  }, [search, genre]);
+
+  if (loading) return <div className="text-center mt-10 text-lg">Loading movies...</div>;
+  if (error) return <div className="text-center mt-10 text-red-500">Error: {error}</div>;
+
+  // Genre options
+  const GENRES = [
+    "Action", "Drama", "Sci-Fi", "Crime", "Thriller", "Romance", "Animation", "Adventure", "War", "Horror", "Musical", "Comedy", "Mystery", "Western"
+  ];
 
   return (
     <section className="py-14 md:py-24 bg-white dark:bg-[#0b1727] text-[#373572] dark:text-white min-h-screen">
@@ -210,63 +77,123 @@ const Movies = () => {
           </div>
           <div className="col-span-12 text-center mt-6 flex flex-col items-center gap-4">
             {/* Search Bar */}
-            <input
-              type="text"
-              placeholder="Search movies..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-[#17233a] dark:border-gray-700 dark:text-white"
-              aria-label="Search movies"
-            />
-            {/* Category Buttons Section */}
-            <div className="flex flex-wrap justify-center gap-2">
-              {MOVIE_CATEGORIES.map((category) => (
-                <button
-                  key={category.value}
-                  onClick={() => setActiveCategory(category.value)}
-                  className={`cursor-pointer btn m-1 py-2 px-5 rounded-md transition-colors duration-200
-                    ${activeCategory === category.value
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 dark:bg-[#17233a] text-[#373572] dark:text-white hover:bg-blue-600 hover:text-white"
-                    }`}
-                  aria-pressed={activeCategory === category.value}
-                >
-                  {category.label}
-                </button>
-              ))}
+            <div className="flex flex-col md:flex-row gap-2 w-full max-w-2xl justify-center items-center">
+              <input
+                type="text"
+                placeholder="Search movies by title..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-[#17233a] dark:border-gray-700 dark:text-white"
+                aria-label="Search movies"
+              />
+              <select
+                value={genre}
+                onChange={e => setGenre(e.target.value)}
+                className="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-[#17233a] dark:border-gray-700 dark:text-white"
+                aria-label="Filter by genre"
+              >
+                <option value="">--Filter by Genre--</option>
+                {GENRES.map(g => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => { setSearch(""); setGenre(""); }}
+                className="px-4 py-2 bg-gray-200 dark:bg-[#17233a] text-[#373572] dark:text-white rounded-md border border-gray-300 dark:border-gray-700 hover:bg-blue-600 hover:text-white transition-colors duration-200"
+              >
+                Reset
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Currently Running Section */}
-        <div className="mb-12">
-          <h3 className="text-2xl md:text-3xl font-bold mb-6 text-blue-700 dark:text-blue-300 border-b-2 border-blue-200 dark:border-blue-900 pb-2">
-            Currently Running
-          </h3>
-          {runningMovies.length === 0 ? (
-            <div className="text-center text-lg text-gray-500 mt-10">
-              No movies found.
-            </div>
+        {/* Movie Grid */}
+        <div className="grid grid-cols-12 gap-4 mt-8">
+          {movies.length === 0 ? (
+            <div className="col-span-12 text-center text-lg text-gray-500 mt-10">No movies found.</div>
           ) : (
-            <div className="grid grid-cols-5 gap-6 md:gap-y-12 text-center">
-              {runningMovies.map(MovieCard)}
-            </div>
-          )}
-        </div>
-
-        {/* Coming Soon Section */}
-        <div>
-          <h3 className="text-2xl md:text-3xl font-bold mb-6 text-blue-700 dark:text-blue-300 border-b-2 border-blue-200 dark:border-blue-900 pb-2">
-            Coming Soon
-          </h3>
-          {comingSoonMovies.length === 0 ? (
-            <div className="text-center text-lg text-gray-500 mt-10">
-              No movies found.
-            </div>
-          ) : (
-            <div className="grid grid-cols-5 gap-6 md:gap-y-12 text-center">
-              {comingSoonMovies.map(MovieCard)}
-            </div>
+            movies.map((movie) => (
+              <div className="col-span-6 md:col-span-3 xl:col-span-1 flex justify-center" key={movie.id}>
+                <div
+                  className="w-full max-w-[260px] h-[420px] flex flex-col justify-between rounded-xl overflow-hidden border border-white dark:border-[#17233a] p-1 cursor-pointer bg-white dark:bg-[#17233a] shadow transition-transform duration-200 hover:-translate-y-2 hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      sessionStorage.setItem("selectedMovieId", movie.id);
+                    }
+                    router.push(`/movie-details/${movie.id}`);
+                  }}
+                  tabIndex={0}
+                  onKeyDown={e => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      if (typeof window !== "undefined") {
+                        sessionStorage.setItem("selectedMovieId", movie.id);
+                      }
+                      router.push(`/movie-details/${movie.id}`);
+                    }
+                  }}
+                  role="button"
+                  aria-label={`View details for ${movie.title}`}
+                >
+                  <img
+                    src={movie.posterUrl}
+                    alt={movie.title}
+                    className="w-full h-[160px] object-cover rounded-xl mx-auto"
+                  />
+                  <div className="mt-4 flex-1 flex flex-col justify-between">
+                    <div>
+                      <h5 className="text-xl font-medium mb-1 text-center">
+                        {movie.title} <span className="text-sm text-gray-400">({movie.year})</span>
+                      </h5>
+                      <p className="mb-0 text-sm text-gray-500 dark:text-gray-300 text-center">
+                        {movie.genre}
+                      </p>
+                      <div className="mt-2 text-center">
+                        <span className="font-semibold text-sm text-blue-600 dark:text-blue-300">Rating:</span>
+                        <span className="ml-1 text-sm text-yellow-500 dark:text-yellow-400">{movie.rating}</span>
+                      </div>
+                      <div className="mt-2 text-center">
+                        <span className="font-semibold text-sm text-blue-600 dark:text-blue-300">Director:</span>
+                        <span className="ml-1 text-sm text-gray-700 dark:text-gray-200">{movie.director}</span>
+                      </div>
+                      <div className="mt-2 text-center">
+                        <span className="font-semibold text-sm text-blue-600 dark:text-blue-300">Description:</span>
+                        <p className="text-sm text-gray-700 dark:text-gray-200 mt-1 line-clamp-3">{movie.description}</p>
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <span className="font-semibold text-sm text-blue-600 dark:text-blue-300">Showtimes:</span>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {movie.showtimes && movie.showtimes.length > 0 ? (
+                          movie.showtimes.map((showtime: string, idx: number) => (
+                            <button
+                              key={idx}
+                              className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 rounded text-xs"
+                              disabled={showtime === "Coming Soon"}
+                            >
+                              {showtime}
+                            </button>
+                          ))
+                        ) : (
+                          <span className="text-xs text-gray-400">No showtimes available</span>
+                        )}
+                      </div>
+                    </div>
+                    {movie.trailerUrl && (
+                      <div className="mt-2 text-center">
+                        <a
+                          href={movie.trailerUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-red-600 font-bold hover:underline"
+                        >
+                          ▶ Watch Trailer
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
           )}
         </div>
       </div>
@@ -274,4 +201,4 @@ const Movies = () => {
   );
 };
 
-export default Movies
+export default Movies;
