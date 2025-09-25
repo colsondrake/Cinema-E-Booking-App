@@ -34,12 +34,6 @@ public class MovieController {
     }
 
     @GetMapping("/filter")
-
-    public List<Movie> filterMoviesByGenre(@RequestParam String genre) {
-        return movieService.searchByGenre(genre);
-    }
-
-
     public List<Movie> searchByGenre(@RequestParam String genre) {
         return movieService.searchByGenre(genre);
     }
@@ -49,6 +43,4 @@ public class MovieController {
         return movieService.saveMovie(movie);
     }
 
-
 }
-
