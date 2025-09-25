@@ -34,12 +34,12 @@ public class MovieController {
     }
 
     @GetMapping("/filter")
-<<<<<<< HEAD
+
     public List<Movie> filterMoviesByGenre(@RequestParam String genre) {
         return movieService.searchByGenre(genre);
     }
 
-=======
+
     public List<Movie> searchByGenre(@RequestParam String genre) {
         return movieService.searchByGenre(genre);
     }
@@ -49,5 +49,6 @@ public class MovieController {
         return movieService.saveMovie(movie);
     }
 
->>>>>>> 478bdf1 (Linked to the DB and changed genre to an array)
+
 }
+
