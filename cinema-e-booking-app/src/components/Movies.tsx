@@ -112,8 +112,7 @@ const Movies = () => {
   const MovieCard: React.FC<{ movie: Movie; router: ReturnType<typeof useRouter> }> = ({ movie, router }) => (
     <div className="flex justify-center" key={movie.id}>
       <div
-        className="w-[260px] h-[420px] flex flex-col justify-between rounded-xl overflow-hidden border border-white dark:border-[#17233a] p-1 cursor-pointer bg-white dark:bg-[#17233a] shadow transition-transform duration-200 hover:-translate-y-2 hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 pb-2"
-        style={{ minWidth: '260px', minHeight: '420px', maxWidth: '260px', maxHeight: '420px' }}
+        className="w-[260px] h-[530px] flex flex-col justify-between rounded-xl overflow-hidden border border-[#17233a] p-1 cursor-pointer bg-[#17233a] shadow transition-transform duration-200 hover:-translate-y-2 hover:shadow-2xl pb-2"
         onClick={() => {
           if (typeof window !== "undefined") {
             sessionStorage.setItem("selectedMovieId", movie.id);
@@ -136,33 +135,19 @@ const Movies = () => {
         <img
           src={movie.posterUrl}
           alt={movie.title}
-          className="w-full h-[160px] object-cover rounded-xl mx-auto"
+          className="w-full h-[375px] object-cover rounded-xl mx-auto"
         />
-        <div className="mt-4 flex-1 flex flex-col justify-between">
+        <div className="mt-4 flex-1 flex flex-col">
           <div>
             {/* Movie Title and Year */}
             <h5 className="text-xl font-medium mb-1 text-center">
               {movie.title}
             </h5>
-            {/* Genre */}
-            {/* <p className="mb-0 text-sm text-gray-500 dark:text-gray-300 text-center">
-              {movie.genre}
-            </p> */}
             {/* Rating */}
             <div className="mt-2 text-center">
               <span className="font-semibold text-sm text-blue-600 dark:text-blue-300">Rating:</span>
               <span className="ml-1 text-sm text-yellow-500 dark:text-yellow-400">{movie.rating}</span>
             </div>
-            {/* Director */}
-            {/* <div className="mt-2 text-center">
-              <span className="font-semibold text-sm text-blue-600 dark:text-blue-300">Director:</span>
-              <span className="ml-1 text-sm text-gray-700 dark:text-gray-200">{movie.director}</span>
-            </div> */}
-            {/* Description */}
-            {/* <div className="mt-2 text-center">
-              <span className="font-semibold text-sm text-blue-600 dark:text-blue-300">Description:</span>
-              <p className="text-sm text-gray-700 dark:text-gray-200 mt-1 line-clamp-3">{movie.description}</p>
-            </div> */}
           </div>
           {/* Showtimes */}
           <div className="mt-2 text-center">
