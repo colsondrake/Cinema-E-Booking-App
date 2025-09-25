@@ -1,13 +1,18 @@
 package com.example.ces.model;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.List;
 
+@Document(collection = "movies")
 public class Movie {
+
+    @Id
     private String id;
     private String title;
     private String director;
     private int year;
-    private String genre;
+    private List<String> genres; // plural
     private String rating;
     private String description;
     private String posterUrl;
@@ -17,13 +22,15 @@ public class Movie {
     public Movie() {
     }
 
-    public Movie(String id, String title, String director, int year, String genre,
-            String rating, String description, String posterUrl, String trailerUrl, List<String> showtimes) {
+    public Movie(String id, String title, String director, int year,
+            List<String> genres,
+            String rating, String description, String posterUrl,
+            String trailerUrl, List<String> showtimes) {
         this.id = id;
         this.title = title;
         this.director = director;
         this.year = year;
-        this.genre = genre;
+        this.genres = genres;
         this.rating = rating;
         this.description = description;
         this.posterUrl = posterUrl;
@@ -31,7 +38,7 @@ public class Movie {
         this.showtimes = showtimes;
     }
 
-    // Getters and setters for all fields
+    // Getters and setters
     public String getId() {
         return id;
     }
@@ -64,12 +71,12 @@ public class Movie {
         this.year = year;
     }
 
-    public String getGenre() {
-        return genre;
+    public List<String> getGenres() {
+        return genres;
     }
 
-    public void setGenre(String genre) {
-        this.genre = genre;
+    public void setGenres(List<String> genres) {
+        this.genres = genres;
     }
 
     public String getRating() {

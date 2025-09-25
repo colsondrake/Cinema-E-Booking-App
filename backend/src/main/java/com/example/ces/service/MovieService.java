@@ -1,60 +1,59 @@
 package com.example.ces.service;
 
 import com.example.ces.model.Movie;
+import com.example.ces.repository.MovieRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 
-import java.util.ArrayList;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class MovieService {
 
-    private final MovieLoader movieLoader;
-    private List<Movie> movies;
+    private final MovieRepository movieRepository;
 
-    public MovieService(MovieLoader movieLoader) {
-        this.movieLoader = movieLoader;
+    public MovieService(MovieRepository movieRepository) {
+        this.movieRepository = movieRepository;
     }
 
     @EventListener(ContextRefreshedEvent.class)
     public void init() {
-        movies = movieLoader.loadMovies();
+        if (movieRepository.count() == 0) {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                InputStream is = getClass().getResourceAsStream("/data.json");
+                List<Movie> movies = mapper.readValue(is, new TypeReference<List<Movie>>() {
+                });
+                movieRepository.saveAll(movies);
+                System.out.println("✅ Loaded movies from data.json into MongoDB");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public List<Movie> getAllMovies() {
-        return movies;
+        return movieRepository.findAll();
     }
 
     public Optional<Movie> getMovieById(String id) {
-        for (Movie m : movies) {
-            if (m.getId().equals(id)) {
-                return Optional.of(m);
-            }
-        }
-        return Optional.empty();
+        return movieRepository.findById(id);
     }
 
     public List<Movie> searchByTitle(String title) {
-        List<Movie> result = new ArrayList<>();
-        for (Movie m : movies) {
-            if (m.getTitle().toLowerCase().contains(title.toLowerCase())) {
-                result.add(m);
-            }
-        }
-        return result;
+        return movieRepository.findByTitleContainingIgnoreCase(title);
     }
 
     public List<Movie> searchByGenre(String genre) {
-        List<Movie> result = new ArrayList<>();
-        for (Movie m : movies) {
-            if (m.getGenre().equalsIgnoreCase(genre)) {
-                result.add(m);
-            }
-        }
-        return result;
+        return movieRepository.findByGenresIgnoreCase(genre); // plural
     }
 
+    public Movie saveMovie(Movie movie) {
+        return movieRepository.save(movie);
+    }
 }
