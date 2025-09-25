@@ -17,7 +17,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(MovieController.class)
 public class MovieControllerTest {
 
-<<<<<<< HEAD
     @Autowired
     private MockMvc mockMvc;
 
@@ -63,7 +62,6 @@ public class MovieControllerTest {
                                 +
                                 "}]"));
     }
-=======
         @Autowired
         private MockMvc mockMvc;
 
@@ -109,5 +107,6 @@ public class MovieControllerTest {
                                                                 +
                                                                 "}]"));
         }
->>>>>>> 478bdf1 (Linked to the DB and changed genre to an array)
+
 }
+
