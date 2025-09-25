@@ -133,21 +133,21 @@ const Booking = () => {
                         <>
                             {/* Movie details section */}
                             <div className="flex flex-col md:flex-row gap-6 mb-8 items-center justify-center">
-                                <img src={movie.posterUrl} alt={movie.title} className="w-40 h-40 object-cover rounded-lg shadow" />
+                                {/* <img src={movie.posterUrl} alt={movie.title} className="w-40 h-40 object-cover rounded-lg shadow" /> */}
                                 <div className="text-center md:text-left">
                                     <h3 className="text-xl font-semibold mb-1">{movie.title} ({movie.year})</h3>
-                                    <p className="mb-1 text-gray-600 dark:text-gray-300">Directed by: {movie.director}</p>
+                                    {/* <p className="mb-1 text-gray-600 dark:text-gray-300">Directed by: {movie.director}</p>
                                     <p className="mb-2 text-gray-700 dark:text-gray-200">{movie.description}</p>
                                     <div className="mb-1">
                                         <span className="font-semibold">Genre:</span> {movie.genre}
-                                    </div>
+                                    </div> */}
                                     <div className="mb-1">
                                         <span className="font-semibold">Showtime: </span>
                                         <span className="inline-block px-3 py-1 rounded bg-blue-500 text-white text-xs">{showtime}</span>
                                     </div>
-                                    <div>
+                                    {/* <div>
                                         <span className="font-semibold">Rating:</span> {movie.rating}
-                                    </div>
+                                    </div> */}
                                 </div>
                             </div>
                             {/* Show confirmation message after submission */}

@@ -1,7 +1,14 @@
+
 'use client'
 
+
+// Import React and necessary hooks
 import React, { useEffect, useState } from "react";
 
+
+/**
+ * Movie interface defines the structure of a movie object
+ */
 interface Movie {
   id: string;
   title: string;
@@ -15,18 +22,28 @@ interface Movie {
   showtimes: string[];
 }
 
+
+/**
+ * MovieDetails component fetches and displays detailed information about a selected movie.
+ * It retrieves the movie ID from sessionStorage and fetches movie data from the backend API.
+ */
 const MovieDetails = () => {
+  // State to hold the movie object
   const [movie, setMovie] = useState<Movie | null>(null);
+  // State to manage loading status
   const [loading, setLoading] = useState(true);
 
-
   useEffect(() => {
+    /**
+     * Fetches movie details from the backend API using the selected movie ID from sessionStorage.
+     */
     const fetchMovie = async () => {
       if (typeof window !== "undefined") {
         setLoading(true);
         const movieId = sessionStorage.getItem("selectedMovieId");
         if (movieId) {
           try {
+            // Fetch movie data from backend
             const res = await fetch(`http://localhost:8080/api/movies/${movieId}`);
             if (res.ok) {
               const data = await res.json();
@@ -46,6 +63,8 @@ const MovieDetails = () => {
     fetchMovie();
   }, []);
 
+
+  // Show loading state while fetching movie data
   if (loading) {
     return (
       <section className="py-14 md:py-24 bg-white dark:bg-[#0b1727] text-zinc-900 dark:text-white min-h-screen flex items-center justify-center">
@@ -56,6 +75,8 @@ const MovieDetails = () => {
     );
   }
 
+
+  // Show message if no movie is found
   if (!movie) {
     return (
       <section className="py-14 md:py-24 bg-white dark:bg-[#0b1727] text-zinc-900 dark:text-white min-h-screen flex items-center justify-center">
@@ -67,98 +88,95 @@ const MovieDetails = () => {
     );
   }
 
+  // Main render: display trailer left, details center, poster right in a row
   return (
     <section className="relative py-14 md:py-24 bg-white dark:bg-[#0b1727] text-zinc-900 dark:text-white z-[1] min-h-screen">
-      <div className="container px-4">
-        <div className="grid grid-cols-12 justify-center">
-          <div className="col-span-12 lg:col-span-10 lg:col-start-2">
-            <div className="grid grid-cols-12 gap-8">
-              <div className="col-span-12 md:col-span-6 md:py-12 flex flex-col items-center gap-6">
-                <img
-                  src={movie.posterUrl}
-                  alt={movie.title}
-                  className="rounded-xl w-full max-w-md mx-auto shadow-lg"
-                />
-                {/* Movie Trailer */}
-                <div className="w-full max-w-md mx-auto">
-                  <h5 className="text-lg font-semibold mb-2 text-center">Trailer</h5>
-                  <div className="aspect-w-16 aspect-h-9">
-                    {movie.trailerUrl && movie.trailerUrl.match(/\.(mp4|webm|ogg)$/i) ? (
-                      <video
-                        controls
-                        width="100%"
-                        height="250"
-                        className="rounded-lg w-full h-64 border border-gray-300 dark:border-gray-700"
-                        poster={movie.posterUrl}
-                      >
-                        <source src={movie.trailerUrl} />
-                        Your browser does not support the video tag.
-                      </video>
-                    ) : (
-                      <iframe
-                        width="100%"
-                        height="250"
-                        src={movie.trailerUrl || "https://www.youtube.com/embed/dQw4w9WgXcQ"}
-                        title="Movie Trailer"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        className="rounded-lg w-full h-64 border border-gray-300 dark:border-gray-700"
-                      ></iframe>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="col-span-12 md:col-span-6 pb-6 md:py-12 relative flex flex-col justify-center">
-                <div className="bg-blue-100 dark:bg-[#1E2735] absolute -top-[10%] right-0 left-0 bottom-0 md:top-0 md:-left-[20%] rounded-xl rotate-180 -z-[1]"></div>
-                <div className="p-6 lg:p-14 mb-12 relative z-10">
-                  <h4 className="text-3xl font-bold mb-4">{movie.title}</h4>
-                  <div className="mb-4 text-lg text-gray-700 dark:text-gray-300">
-                    <span className="font-semibold">Description: </span>{movie.description}
-                  </div>
-                  <div className="mb-2">
-                    <span className="font-semibold">Genre: </span>
-                    {movie.genre}
-                  </div>
-                  <div className="mb-2">
-                    <span className="font-semibold">Director: </span>
-                    {movie.director}
-                  </div>
-                  <div className="mb-2">
-                    <span className="font-semibold">Year: </span>
-                    {movie.year}
-                  </div>
-                  <div className="mb-2">
-                    <span className="font-semibold">Rating: </span>
-                    <span className="text-yellow-500">{movie.rating}</span>
-                  </div>
-                  <div className="mb-2">
-                    <span className="font-semibold">Showtimes: </span>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {movie.showtimes.map((showtime, idx) => (
-                        <button
-                          key={idx}
-                          className="px-3 py-1 rounded bg-blue-500 text-white text-xs hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
-                          onClick={() => {
-                            if (typeof window !== "undefined") {
-                              sessionStorage.setItem("selectedMovieId", movie.id);
-                              sessionStorage.setItem("selectedShowtime", showtime);
-                            }
-                            window.location.href = "/booking";
-                          }}
-                        >
-                          {showtime}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
+      <div className="container px-4 mx-auto flex flex-col lg:flex-row items-stretch justify-center gap-8 max-w-6xl">
+        {/* Movie Trailer (Left) */}
+        <div className="flex-1 flex flex-col justify-center items-center mb-8 lg:mb-0">
+          <h5 className="text-lg font-semibold mb-2 text-center">Trailer</h5>
+          <div className="aspect-w-16 aspect-h-9 w-full max-w-2xl" style={{ minHeight: '32rem' }}>
+            {movie.trailerUrl && movie.trailerUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+              <video
+                controls
+                width="100%"
+                height="500"
+                className="rounded-lg w-full h-[32rem] border border-gray-300 dark:border-gray-700"
+                poster={movie.posterUrl}
+              >
+                <source src={movie.trailerUrl} />
+                Your browser does not support the video tag.
+              </video>
+            ) : (
+              <iframe
+                width="100%"
+                height="500"
+                src={movie.trailerUrl || "https://www.youtube.com/embed/dQw4w9WgXcQ"}
+                title="Movie Trailer"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="rounded-lg w-full h-[32rem] border border-gray-300 dark:border-gray-700"
+              ></iframe>
+            )}
+          </div>
+        </div>
+        {/* Movie Details (Center) */}
+        <div className="flex-1 bg-blue-100 dark:bg-[#1E2735] rounded-xl p-6 lg:p-10 relative z-10 flex flex-col justify-center">
+          <h4 className="text-3xl font-bold mb-4 text-center">{movie.title}</h4>
+          <div className="mb-4 text-lg text-gray-700 dark:text-gray-300 text-center">
+            <span className="font-semibold">Description: </span>{movie.description}
+          </div>
+          <div className="mb-2 text-center">
+            <span className="font-semibold">Genre: </span>
+            {movie.genre}
+          </div>
+          <div className="mb-2 text-center">
+            <span className="font-semibold">Director: </span>
+            {movie.director}
+          </div>
+          <div className="mb-2 text-center">
+            <span className="font-semibold">Year: </span>
+            {movie.year}
+          </div>
+          <div className="mb-2 text-center">
+            <span className="font-semibold">Rating: </span>
+            <span className="text-yellow-500">{movie.rating}</span>
+          </div>
+          <div className="mb-2 text-center">
+            <span className="font-semibold">Showtimes: </span>
+            <div className="flex flex-wrap gap-4 justify-center mt-3">
+              {movie.showtimes.map((showtime, idx) => (
+                <button
+                  key={idx}
+                  className="px-6 py-3 rounded-lg bg-blue-500 text-white text-lg font-semibold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer transition-all duration-150"
+                  onClick={() => {
+                    // Store selected movie and showtime in sessionStorage and navigate to booking page
+                    if (typeof window !== "undefined") {
+                      sessionStorage.setItem("selectedMovieId", movie.id);
+                      sessionStorage.setItem("selectedShowtime", showtime);
+                    }
+                    window.location.href = "/booking";
+                  }}
+                >
+                  {showtime}
+                </button>
+              ))}
             </div>
           </div>
+        </div>
+        {/* Movie Poster (Right) */}
+        <div className="flex-1 flex flex-col justify-center items-center">
+          <img
+            src={movie.posterUrl}
+            alt={movie.title}
+            className="rounded-xl w-full max-w-xs mx-auto shadow-lg"
+          />
         </div>
       </div>
     </section>
   );
 };
 
+
+// Export the MovieDetails component as default
 export default MovieDetails;
