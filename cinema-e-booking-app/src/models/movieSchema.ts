@@ -4,7 +4,7 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 interface IMovie extends Document {
     title: string;
     releaseDate: number;
-    genre: string;
+    genre: string[];
     rating: string;
     director: string;
     description: string;
@@ -23,7 +23,7 @@ const movieSchema = new Schema<IMovie>({
         required: true,
     },
     genre: {
-        type: String,
+        type: [String],
         required: true,
     },
     rating: {
