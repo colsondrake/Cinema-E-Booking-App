@@ -16,14 +16,13 @@ type Movie = {
   title: string;
   director: string;
   year: number;
-  genre: string;
+  genres: string[];
   rating: string;
   description: string;
   posterUrl: string;
   trailerUrl: string;
   showtimes: string[];
 };
-
 
 /**
  * Movies component
@@ -35,58 +34,75 @@ const Movies = () => {
 
   // State variables
   const [movies, setMovies] = useState<Movie[]>([]); // All movies fetched from backend
-  const [loading, setLoading] = useState(true);      // Loading state
+  // const [loading, setLoading] = useState(true);      // Loading state
   const [error, setError] = useState<string | null>(null); // Error state
   const [searchInput, setSearchInput] = useState("");     // Controlled input for search box
   const [search, setSearch] = useState("");              // Search query to trigger fetch
-  const [genre, setGenre] = useState("");                // Selected genre filter
+  // const [genre, setGenre] = useState("");                // Selected genre filter
+  const [genres, setGenres] = useState<string[]>([]);
 
 
   /**
    * Fetch movies from backend API, with optional search and genre filters.
-   * Triggers on changes to 'search' or 'genre'.
+   * Triggers on changes to 'search' or 'genres'.
    */
   useEffect(() => {
     const fetchMovies = async () => {
-      setLoading(true);
+      // setLoading(true);
       setError(null);
 
-      // Build API URL based on search and genre
+      // Build API URL based on search
       let url = "http://localhost:8080/api/movies";
-      if (search && genre) {
+      if (search) {
         url = `http://localhost:8080/api/movies/search?title=${encodeURIComponent(search)}`;
-      } else if (search) {
-        url = `http://localhost:8080/api/movies/search?title=${encodeURIComponent(search)}`;
-      } else if (genre) {
-        url = `http://localhost:8080/api/movies/filter?genre=${encodeURIComponent(genre)}`;
       }
       try {
         const res = await fetch(url);
         if (!res.ok) throw new Error("Failed to fetch movies");
         let data = await res.json();
-        // If both search and genre, filter genre on frontend
-        if (search && genre) {
-          data = data.filter((m: Movie) => m.genre.toLowerCase() === genre.toLowerCase());
+        // Apply all current filters within 'genres'
+        if (Array.isArray(genres) && genres.length > 0) {
+          data = data.filter((m: Movie) =>
+            Array.isArray(m.genres) &&
+            genres.some((filterGenre: string) =>
+              m.genres.some((g: string) =>
+                g.toLowerCase() === filterGenre.toLowerCase()
+              )
+            )
+          );
         }
         setMovies(data);
       } catch (err: any) {
         setError(err.message || "Unknown error");
       } finally {
-        setLoading(false);
+        // setLoading(false);
       }
     };
     fetchMovies();
-  }, [search, genre]);
+  }, [search, genres]);
 
 
   // Loading and error states
-  if (loading) return <div className="text-center mt-10 text-lg">Loading movies...</div>;
+  // if (loading) return <div className="text-center mt-10 text-lg">Loading movies...</div>;
   if (error) return <div className="text-center mt-10 text-red-500">Error: {error}</div>;
 
 
   // List of available genres for filtering
   const GENRES = [
-    "Action", "Drama", "Sci-Fi", "Crime", "Thriller", "Romance", "Animation", "Adventure", "War", "Horror", "Musical", "Comedy", "Mystery", "Western"
+    "Action", 
+    "Drama", 
+    "SciFi", 
+    "Crime", 
+    "Thriller", 
+    "Romance", 
+    "Animation", 
+    "Adventure", 
+    "War", 
+    "Horror", 
+    "Musical", 
+    "Comedy", 
+    "Mystery", 
+    "Western",
   ];
 
 
@@ -187,8 +203,8 @@ const Movies = () => {
             </h2>
           </div>
           <div className="col-span-12 text-center mt-6 flex flex-col items-center gap-4">
-            {/* Functionalities Bar: Search, Genre Filter, Reset */}
-            <div className="flex flex-col md:flex-row gap-2 w-full max-w-2xl justify-center items-center">
+            {/* Functionalities Bar 1: Search, Reset */}
+            <div className="flex flex-row gap-2 w-full max-w-2xl justify-center items-center">
               {/* Search Box */}
               <input
                 type="text"
@@ -207,25 +223,36 @@ const Movies = () => {
               >
                 Search
               </button>
-              {/* Genre Selection Dropdown */}
-              <select
-                value={genre}
-                onChange={e => setGenre(e.target.value)}
-                className="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-[#17233a] dark:border-gray-700 dark:text-white"
-                aria-label="Filter by genre"
-              >
-                <option value="">--Filter by Genre--</option>
-                {GENRES.map(g => (
-                  <option key={g} value={g}>{g}</option>
-                ))}
-              </select>
               {/* Reset Button */}
               <button
-                onClick={() => { setSearch(""); setGenre(""); }}
+                onClick={() => { setSearch(""); setGenres([]); }}
                 className="px-4 py-2 bg-gray-200 dark:bg-[#17233a] text-[#373572] dark:text-white rounded-md border border-gray-300 dark:border-gray-700 hover:bg-blue-600 hover:text-white transition-colors duration-200 cursor-pointer"
               >
                 Reset
               </button>
+            </div>
+            {/* Functionalities Bar 2: Genre Filter Selection Buttons */}
+            <div className="flex flex-row gap-2 w-full max-w-2xl justify-center items-center">
+              {GENRES.map((g: string, index: number) => {
+                const isSelected = genres.includes(g);
+                return (
+                  <button
+                    key={index}
+                    className={`px-4 py-2 rounded-md border transition-colors duration-200 cursor-pointer 
+                      ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-200 dark:bg-[#17233a] text-[#373572] dark:text-white border-gray-300 dark:border-gray-700 hover:bg-blue-600 hover:text-white'}`}
+                    onClick={() => {
+                      setGenres((prev: string[]) =>
+                        prev.includes(g)
+                          ? prev.filter((genre: string) => genre !== g)
+                          : [...prev, g]
+                      );
+                    }}
+                    aria-pressed={isSelected}
+                  >
+                    {g}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
