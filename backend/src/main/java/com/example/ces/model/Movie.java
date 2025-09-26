@@ -6,36 +6,38 @@ import java.util.List;
 
 @Document(collection = "movies")
 public class Movie {
-
+    // Define data members
     @Id
     private String id;
     private String title;
     private String director;
     private int year;
-    private List<String> genres; // plural
+    private List<String> genres;
     private String rating;
     private String description;
     private String posterUrl;
     private String trailerUrl;
     private List<String> showtimes;
 
+    // Default constructor
     public Movie() {
     }
 
+    // Convenience constructor
     public Movie(String id, String title, String director, int year,
             List<String> genres,
             String rating, String description, String posterUrl,
             String trailerUrl, List<String> showtimes) {
-        this.id = id;
-        this.title = title;
-        this.director = director;
-        this.year = year;
-        this.genres = genres;
-        this.rating = rating;
-        this.description = description;
-        this.posterUrl = posterUrl;
-        this.trailerUrl = trailerUrl;
-        this.showtimes = showtimes;
+        setId(id);
+        setTitle(title);
+        setDirector(director);
+        setYear(year);
+        setGenres(genres);
+        setRating(rating);
+        setDescription(description);
+        setPosterUrl(posterUrl);
+        setTrailerUrl(trailerUrl);
+        setShowtimes(showtimes);
     }
 
     // Getters and setters
