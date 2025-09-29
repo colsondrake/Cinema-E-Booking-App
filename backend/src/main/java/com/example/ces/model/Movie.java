@@ -6,13 +6,13 @@ import java.util.List;
 
 @Document(collection = "movies")
 public class Movie {
-
+    // Define data members
     @Id
     private String id;
     private String title;
     private String director;
     private int year;
-    private List<String> genres; // plural
+    private List<String> genres;
     private String rating;
     private String description;
     private String posterUrl;
@@ -20,9 +20,11 @@ public class Movie {
     private List<String> showtimes;
     private String status;
 
+    // Default constructor
     public Movie() {
     }
 
+    // Convenience constructor
     public Movie(String id, String title, String director, int year,
             List<String> genres,
             String rating, String description, String posterUrl,
