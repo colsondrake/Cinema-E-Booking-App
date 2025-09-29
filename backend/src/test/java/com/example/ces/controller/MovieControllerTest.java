@@ -36,7 +36,8 @@ public class MovieControllerTest {
                 "A computer hacker learns about reality.",
                 "poster_url_here",
                 "trailer_url_here",
-                Arrays.asList("2:00 PM", "5:00 PM", "8:00 PM")
+                Arrays.asList("2:00 PM", "5:00 PM", "8:00 PM"),
+                "Coming Soon"
         );
 
         Movie movie2 = new Movie(
@@ -49,7 +50,8 @@ public class MovieControllerTest {
                 "A thief steals corporate secrets through dream-sharing technology.",
                 "poster_url_here",
                 "trailer_url_here",
-                Arrays.asList("1:00 PM", "4:00 PM", "7:00 PM")
+                Arrays.asList("1:00 PM", "4:00 PM", "7:00 PM"),
+                "Currently Runninig"
         );
 
         when(movieService.getAllMovies()).thenReturn(Arrays.asList(movie1, movie2));
