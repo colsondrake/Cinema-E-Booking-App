@@ -22,6 +22,7 @@ type Movie = {
   posterUrl: string;
   trailerUrl: string;
   showtimes: string[];
+  status: string;
 };
 
 /**
@@ -113,10 +114,10 @@ const Movies = () => {
    * - Coming Soon: movies with no showtimes
    */
   const currentlyRunning = movies.filter(
-    (movie) => Array.isArray(movie.showtimes) && movie.showtimes.length > 0
+    (movie) => movie.status == "Currently Running"
   );
   const comingSoon = movies.filter(
-    (movie) => !Array.isArray(movie.showtimes) || movie.showtimes.length === 0
+    (movie) => movie.status == "Coming Soon"
   );
 
 
@@ -128,7 +129,7 @@ const Movies = () => {
   const MovieCard: React.FC<{ movie: Movie; router: ReturnType<typeof useRouter> }> = ({ movie, router }) => (
     <div className="flex justify-center" key={movie.id}>
       <div
-        className="w-[260px] h-[530px] flex flex-col justify-between rounded-xl overflow-hidden border border-[#17233a] p-1 cursor-pointer bg-[#17233a] shadow transition-transform duration-200 hover:-translate-y-2 hover:shadow-2xl pb-2"
+        className="w-[260px] flex flex-col justify-between rounded-xl overflow-hidden border border-[#17233a] p-1 cursor-pointer bg-[#17233a] shadow transition-transform duration-200 hover:-translate-y-2 hover:shadow-2xl pb-2"
         onClick={() => {
           if (typeof window !== "undefined") {
             sessionStorage.setItem("selectedMovieId", movie.id);
@@ -166,24 +167,26 @@ const Movies = () => {
             </div>
           </div>
           {/* Showtimes */}
-          <div className="mt-2 text-center">
-            <span className="font-semibold text-sm text-blue-600 dark:text-blue-300">Showtimes:</span>
-            <div className="flex flex-wrap gap-2 mt-1 justify-center">
-              {movie.showtimes && movie.showtimes.length > 0 ? (
-                movie.showtimes.map((showtime: string, idx: number) => (
-                  <button
-                    key={idx}
-                    className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 rounded text-xs"
-                    disabled={showtime === "Coming Soon"}
-                  >
-                    {showtime}
-                  </button>
-                ))
-              ) : (
-                <span className="text-xs text-gray-400">No showtimes available</span>
-              )}
+          {movie.status == "Currently Running" && (
+            <div className="mt-2 text-center">
+              <span className="font-semibold text-sm text-blue-600 dark:text-blue-300">Showtimes:</span>
+              <div className="flex flex-wrap gap-2 mt-1 justify-center">
+                {movie.showtimes && movie.showtimes.length > 0 ? (
+                  movie.showtimes.map((showtime: string, idx: number) => (
+                    <button
+                      key={idx}
+                      className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 rounded text-xs"
+                      disabled={showtime === "Coming Soon"}
+                    >
+                      {showtime}
+                    </button>
+                  ))
+                ) : (
+                  <span className="text-xs text-gray-400">No showtimes available</span>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
