@@ -13,9 +13,12 @@ public class User {
     private String email;
     private String phone;
     private String password;
-    private String address;
-    private PaymentCard paymentCard;
-    private String role; 
+    private String shippingAddress;
+    private String homeAddress; // Optional upon registration
+    private List<PaymentCard> paymentCards; // Max 3 cards per user, Optional upon registration
+    private String role; // Either "customer (user)" or "admin"
+    private boolean isRegistered = false; // To track if the user has completed registration
+    private boolean isSubscribed = false; // To track if the user is subscribed to promotions
 
     // Default constructor 
     public User() {
@@ -23,15 +26,19 @@ public class User {
 
     // Convenience constructor
     public User(String id, String name, String email, String password,
-            String role, String phone, String address, PaymentCard paymentCard) {
+            String role, String phone, String shippingAddress, String homeAddress, 
+            List<PaymentCard> paymentCards, boolean isRegistered, boolean isSubscribed) {
         setId(id);
         setName(name);
         setEmail(email);
         setPassword(password);
         setRole(role);
         setPhone(phone);
-        setAddress(address);
-        setPaymentCard(paymentCard);
+        setShippingAddress(shippingAddress);
+        setHomeAddress(homeAddress);
+        setPaymentCards(paymentCards);
+        setIsRegistered(isRegistered);
+        setIsSubscribed(isSubscribed);
     }
 
     // Getters and setters
@@ -83,19 +90,48 @@ public class User {
         this.phone = phone;
     }
 
-    public String getAddress() {
-        return address;
+    public String getShippingAddress() {
+        return shippingAddress;
     }
 
-    public PaymentCard getPaymentCard() {
-        return paymentCard;
+    public List<PaymentCard> getPaymentCards() {
+        return paymentCards;
     }
 
-    public void setPaymentCard(PaymentCard paymentCard) {
-        this.paymentCard = paymentCard;
+    public void setPaymentCards(List<PaymentCard> paymentCards) {
+        // Enforce maximum of 3 payment cards per user
+        if (paymentCards.size() > 3) {
+            throw new IllegalArgumentException("A user can have a maximum of 3 payment cards.");
+        } else {
+            this.paymentCards = paymentCards;
+        }
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public void setShippingAddress(String shippingAddress) {
+        this.shippingAddress = shippingAddress;
+    }
+
+    public String getHomeAddress() {
+        return homeAddress;
+    }
+
+    public void setHomeAddress(String homeAddress) {
+        this.homeAddress = homeAddress;
+    }
+
+    public boolean getIsRegistered() {
+        return isRegistered;
+    }
+
+    public void setIsRegistered(boolean isRegistered) {
+        this.isRegistered = isRegistered;
+    }
+
+    public boolean getIsSubscribed() {
+        return isSubscribed;
+    }
+
+    public void setIsSubscribed(boolean isSubscribed) {
+        this.isSubscribed = isSubscribed;
     }
 }
