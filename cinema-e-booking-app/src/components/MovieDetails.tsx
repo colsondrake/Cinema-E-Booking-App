@@ -14,7 +14,7 @@ interface Movie {
   title: string;
   director: string;
   year: number;
-  genre: string;
+  genres: string[];
   rating: string;
   description: string;
   posterUrl: string;
@@ -109,7 +109,7 @@ const MovieDetails = () => {
             </div>
             <div className="mb-2 text-center">
               <span className="font-semibold">Genre: </span>
-              {movie.genre}
+              {movie.genres.join(", ")}
             </div>
             <div className="mb-2 text-center">
               <span className="font-semibold">Director: </span>
