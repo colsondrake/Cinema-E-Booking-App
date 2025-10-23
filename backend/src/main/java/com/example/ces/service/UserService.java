@@ -9,12 +9,12 @@ import com.example.ces.model.User;
 import com.example.ces.repository.UserRepository;
 
 @Service
-public class UserService {
+public class WebUserService {
 
     private final UserRepository userRepository;
 
     @Autowired
-    public UserService(UserRepository userRepository) {
+    public WebUserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
