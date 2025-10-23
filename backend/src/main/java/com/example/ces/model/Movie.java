@@ -29,17 +29,17 @@ public class Movie {
             List<String> genres,
             String rating, String description, String posterUrl,
             String trailerUrl, List<String> showtimes, String status) {
-        this.id = id;
-        this.title = title;
-        this.director = director;
-        this.year = year;
-        this.genres = genres;
-        this.rating = rating;
-        this.description = description;
-        this.posterUrl = posterUrl;
-        this.trailerUrl = trailerUrl;
-        this.showtimes = showtimes;
-        this.status = status;
+        setId(id);
+        setTitle(title);
+        setDirector(director);
+        setYear(year);
+        setGenres(genres);
+        setRating(rating);
+        setDescription(description);
+        setPosterUrl(posterUrl);
+        setTrailerUrl(trailerUrl);
+        setShowtimes(showtimes);
+        setStatus(status);
     }
 
     // Getters and setters

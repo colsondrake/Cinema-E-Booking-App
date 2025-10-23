@@ -19,7 +19,7 @@ interface Movie {
     title: string;
     director: string;
     year: number;
-    genre: string;
+    genres: string[];
     rating: string;
     description: string;
     posterUrl: string;
