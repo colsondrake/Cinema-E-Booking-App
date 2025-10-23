@@ -18,6 +18,7 @@ public class Movie {
     private String posterUrl;
     private String trailerUrl;
     private List<String> showtimes;
+    private String status;
 
     // Default constructor
     public Movie() {
@@ -27,17 +28,18 @@ public class Movie {
     public Movie(String id, String title, String director, int year,
             List<String> genres,
             String rating, String description, String posterUrl,
-            String trailerUrl, List<String> showtimes) {
-        setId(id);
-        setTitle(title);
-        setDirector(director);
-        setYear(year);
-        setGenres(genres);
-        setRating(rating);
-        setDescription(description);
-        setPosterUrl(posterUrl);
-        setTrailerUrl(trailerUrl);
-        setShowtimes(showtimes);
+            String trailerUrl, List<String> showtimes, String status) {
+        this.id = id;
+        this.title = title;
+        this.director = director;
+        this.year = year;
+        this.genres = genres;
+        this.rating = rating;
+        this.description = description;
+        this.posterUrl = posterUrl;
+        this.trailerUrl = trailerUrl;
+        this.showtimes = showtimes;
+        this.status = status;
     }
 
     // Getters and setters
@@ -119,5 +121,13 @@ public class Movie {
 
     public void setShowtimes(List<String> showtimes) {
         this.showtimes = showtimes;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
