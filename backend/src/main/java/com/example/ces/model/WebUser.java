@@ -1,19 +1,27 @@
 package com.example.ces.model;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.List;
 
 // WebUser class extending User
+@Document(collection = "users")
 public class WebUser extends User{
     // Data fields for WebUser class can be added here
     private String shippingAddress;
     private List<PaymentCard> paymentCards; // Max 3 cards per user, Optional upon registration
     private boolean emailVerified = false; // To track if the user has verified their email
     private boolean isSubscribed = false; // To track if the user is subscribed to promotions
+    
     // Default constructor 
     public WebUser() {
         super();
     }
 
+    // Convenience constructor with id
+    public WebUser(String id) {
+        super(id);
+    }
     // Convenience constructor
     public WebUser(String id, String name, String email, String password,
             String phone, String homeAddress, boolean isLoggedIn, 
