@@ -1,8 +1,22 @@
-C:\Users\Jake C\Documents\Schoolwork\Software Engineering\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\model\PaymentCard.java
-C:\Users\Jake C\Documents\Schoolwork\Software Engineering\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\CesCinemaApplication.java
-C:\Users\Jake C\Documents\Schoolwork\Software Engineering\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\service\MovieService.java
-C:\Users\Jake C\Documents\Schoolwork\Software Engineering\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\WebConfig.java
-C:\Users\Jake C\Documents\Schoolwork\Software Engineering\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\repository\MovieRepository.java
-C:\Users\Jake C\Documents\Schoolwork\Software Engineering\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\controller\MovieController.java
-C:\Users\Jake C\Documents\Schoolwork\Software Engineering\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\model\Movie.java
-C:\Users\Jake C\Documents\Schoolwork\Software Engineering\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\model\User.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\repository\PaymentCardRepository.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\controller\MovieController.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\model\Address.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\service\MovieService.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\dto\UserProfileDTO.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\model\WebUser.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\controller\UserController.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\dto\PasswordChangeDTO.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\model\PaymentCard.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\repository\MovieRepository.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\util\CardEncryptionUtil.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\model\Admin.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\model\User.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\service\EmailService.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\WebConfig.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\dto\UserRegistrationDTO.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\model\PasswordResetToken.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\repository\PasswordResetTokenRepository.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\repository\UserRepository.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\model\Movie.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\CesCinemaApplication.java
+D:\Cinema-E-Booking-App\backend\src\main\java\com\example\ces\service\UserService.java

@@ -1,0 +1,5 @@
+# Created at 2025-10-25T02:10:22.478
+Boot Manifest-JAR contains absolute paths in classpath 'D:\Cinema-E-Booking-App\backend\target\test-classes'
+Hint: <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+'other' has different root
+
