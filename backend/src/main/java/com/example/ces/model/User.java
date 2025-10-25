@@ -12,7 +12,9 @@ public abstract class User {
     private String phone;
     private String password;
     private String homeAddress; // Optional upon registration
-    private boolean isLoggedIn = false; // To track if the user is currently logged in
+    private boolean verified = false;
+    private String verificationToken;
+    private String resetToken;
 
     // Default constructor
     public User() {
@@ -25,14 +27,17 @@ public abstract class User {
 
     // Convenience constructor
     public User(String id, String name, String email, String password,
-            String phone, String homeAddress, boolean isLoggedIn) {
+            String phone, String homeAddress, boolean verified, String verificationToken, String resetToken) {
         setId(id);
         setName(name);
         setEmail(email);
         setPassword(password);
         setPhone(phone);
         setHomeAddress(homeAddress);
-        setIsLoggedIn(isLoggedIn);
+        setVerified(verified);
+        setVerificationToken(verificationToken);
+        setResetToken(resetToken);
+
     }
 
     // Getters and setters
@@ -84,11 +89,28 @@ public abstract class User {
         this.homeAddress = homeAddress;
     }
 
-    public boolean getIsLoggedIn() {
-        return isLoggedIn;
+    public boolean getVerified() {
+        return verified;
     }
 
-    public void setIsLoggedIn(boolean isLoggedIn) {
-        this.isLoggedIn = isLoggedIn;
+    public void setVerified(boolean verified) {
+        this.verified = verified;
     }
+
+    public String getVerificationToken() {
+        return verificationToken;
+    }
+
+    public void setVerificationToken(String verificationToken) {
+        this.verificationToken = verificationToken;
+    }
+
+    public String getResetToken() {
+        return resetToken;
+    }
+
+    public void setResetToken(String resetToken) {
+        this.resetToken = resetToken;
+    }
+
 }
