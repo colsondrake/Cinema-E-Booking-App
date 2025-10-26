@@ -1,5 +1,8 @@
 package com.example.ces.model;
 
-public class BookingStatus {
-    
+public enum BookingStatus {
+    Pending,
+    Confirmed,
+    Cancelled,
+    Completed
 }

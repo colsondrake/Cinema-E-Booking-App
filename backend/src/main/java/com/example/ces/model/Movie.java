@@ -17,7 +17,7 @@ public class Movie {
     private String description;
     private String posterUrl;
     private String trailerUrl;
-    private List<String> showtimes;
+    private List<String> showtimes; // Change this to an array of showtimes
     private MovieStatus status;
 
     // Default constructor

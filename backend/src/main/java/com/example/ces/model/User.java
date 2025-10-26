@@ -25,6 +25,12 @@ public abstract class User {
         setId(id);
     }
 
+    // Convenience constructor with id and password for admins
+    public User(String id, String password) {
+        setId(id);
+        setPassword(password);
+    }
+
     // Convenience constructor
     public User(String id, String name, String email, String password,
             String phone, String homeAddress, boolean verified, String verificationToken, String resetToken) {

@@ -2,6 +2,7 @@ package com.example.ces.model;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -17,26 +18,28 @@ public class Showtime {
     private LocalDate date;
     private int availableSeats; // To track available seats
     private double basePrice;
-    private Seat seat;
     private int seatsBooked; // To track number of seats booked
 
     // Default constructor
     public Showtime() {
     }
 
-    // Methods
+    /* IN PROGRESS BOOKSEAT METHOD
     public boolean bookSeat(String seatNumber) {
+        // Find the seat by seatNumber
+        
         if (seat.isBooked()) {
             return false; // Seat already booked
         } else if (availableSeats <= 0) {
             return false; // No available seats
         } else {
             seat.setBooked(true);
-            seat.setSeatNumber(seatNumber);
+            updateAvailableSeats(availableSeats);
             seatsBooked ++;
             return true;
         }
-    }  
+    } 
+    */ 
 
     public boolean checkAvailability() {
         return availableSeats > 0;
@@ -46,7 +49,7 @@ public class Showtime {
         return availableSeats;
     }
 
-    public void updateAvailableSeats(int count) {
+    public void updateAvailableSeats(int availableSeats) {
         this.availableSeats -= seatsBooked;
     }
 }

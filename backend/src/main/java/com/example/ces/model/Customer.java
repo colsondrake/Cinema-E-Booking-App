@@ -7,7 +7,7 @@ import java.util.List;
 public class Customer extends User {
 
     private String shippingAddress;
-    private List<PaymentCard> paymentCards; // Max 3 cards per user
+    private List<PaymentCard> paymentCards; // Max 3 cards per user, optional upon registration
     private boolean isSubscribed = false; // Promotions
     private UserStatus status; // Active, Inactive, Suspended
 
