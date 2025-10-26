@@ -11,6 +11,11 @@ const AuthNavMenu = () => (
 				<FontAwesomeIcon icon={faShoppingCart} />
 			</button>
 		</Link>
+		<Link href="/profile">
+			<button className="border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white py-1.5 px-4 rounded cursor-pointer">
+				Profile
+			</button>
+		</Link>
 		<Link href="/signup">
 			<button className="border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white py-1.5 px-4 rounded cursor-pointer">
 				Sign Up
