@@ -1,11 +1,9 @@
 package com.example.ces.model;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-import java.util.List;
 
-@Document(collection = "users")
-public class User {
+// Abstract User class that WebUser and Admin will extend
+public abstract class User {
     // Define data members
     @Id
     private String id;
@@ -13,32 +11,33 @@ public class User {
     private String email;
     private String phone;
     private String password;
-    private String shippingAddress;
     private String homeAddress; // Optional upon registration
-    private List<PaymentCard> paymentCards; // Max 3 cards per user, Optional upon registration
-    private String role; // Either "customer (user)" or "admin"
-    private boolean isRegistered = false; // To track if the user has completed registration
-    private boolean isSubscribed = false; // To track if the user is subscribed to promotions
+    private boolean verified = false;
+    private String verificationToken;
+    private String resetToken;
 
-    // Default constructor 
+    // Default constructor
     public User() {
+    }
+
+    // Convenience constructor with id
+    public User(String id) {
+        setId(id);
     }
 
     // Convenience constructor
     public User(String id, String name, String email, String password,
-            String role, String phone, String shippingAddress, String homeAddress, 
-            List<PaymentCard> paymentCards, boolean isRegistered, boolean isSubscribed) {
+            String phone, String homeAddress, boolean verified, String verificationToken, String resetToken) {
         setId(id);
         setName(name);
         setEmail(email);
         setPassword(password);
-        setRole(role);
         setPhone(phone);
-        setShippingAddress(shippingAddress);
         setHomeAddress(homeAddress);
-        setPaymentCards(paymentCards);
-        setIsRegistered(isRegistered);
-        setIsSubscribed(isSubscribed);
+        setVerified(verified);
+        setVerificationToken(verificationToken);
+        setResetToken(resetToken);
+
     }
 
     // Getters and setters
@@ -74,41 +73,12 @@ public class User {
         this.password = password;
     }
 
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
     public String getPhone() {
         return phone;
     }
 
     public void setPhone(String phone) {
         this.phone = phone;
-    }
-
-    public String getShippingAddress() {
-        return shippingAddress;
-    }
-
-    public List<PaymentCard> getPaymentCards() {
-        return paymentCards;
-    }
-
-    public void setPaymentCards(List<PaymentCard> paymentCards) {
-        // Enforce maximum of 3 payment cards per user
-        if (paymentCards.size() > 3) {
-            throw new IllegalArgumentException("A user can have a maximum of 3 payment cards.");
-        } else {
-            this.paymentCards = paymentCards;
-        }
-    }
-
-    public void setShippingAddress(String shippingAddress) {
-        this.shippingAddress = shippingAddress;
     }
 
     public String getHomeAddress() {
@@ -119,19 +89,28 @@ public class User {
         this.homeAddress = homeAddress;
     }
 
-    public boolean getIsRegistered() {
-        return isRegistered;
+    public boolean getVerified() {
+        return verified;
     }
 
-    public void setIsRegistered(boolean isRegistered) {
-        this.isRegistered = isRegistered;
+    public void setVerified(boolean verified) {
+        this.verified = verified;
     }
 
-    public boolean getIsSubscribed() {
-        return isSubscribed;
+    public String getVerificationToken() {
+        return verificationToken;
     }
 
-    public void setIsSubscribed(boolean isSubscribed) {
-        this.isSubscribed = isSubscribed;
+    public void setVerificationToken(String verificationToken) {
+        this.verificationToken = verificationToken;
     }
+
+    public String getResetToken() {
+        return resetToken;
+    }
+
+    public void setResetToken(String resetToken) {
+        this.resetToken = resetToken;
+    }
+
 }
