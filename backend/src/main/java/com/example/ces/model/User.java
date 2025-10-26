@@ -2,7 +2,7 @@ package com.example.ces.model;
 
 import org.springframework.data.annotation.Id;
 
-// Abstract User class that WebUser and Admin will extend
+// Abstract User class that Customer and Admin will extend
 public abstract class User {
     // Define data members
     @Id

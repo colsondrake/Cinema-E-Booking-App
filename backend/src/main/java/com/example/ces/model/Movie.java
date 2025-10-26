@@ -18,7 +18,7 @@ public class Movie {
     private String posterUrl;
     private String trailerUrl;
     private List<String> showtimes;
-    private String status;
+    private MovieStatus status;
 
     // Default constructor
     public Movie() {
@@ -123,11 +123,24 @@ public class Movie {
         this.showtimes = showtimes;
     }
 
-    public String getStatus() {
+    public MovieStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(MovieStatus status) {
         this.status = status;
+    }
+
+    // Convenience setter that accepts a String and maps it to the enum
+    public void setStatus(String status) {
+        if (status == null) {
+            this.status = null;
+            return;
+        }
+        try {
+            this.status = MovieStatus.valueOf(status.trim().toUpperCase().replaceAll("\\s+", "_"));
+        } catch (IllegalArgumentException e) {
+            this.status = null;
+        }
     }
 }

@@ -51,7 +51,7 @@ public class MovieControllerTest {
                 "poster_url_here",
                 "trailer_url_here",
                 Arrays.asList("1:00 PM", "4:00 PM", "7:00 PM"),
-                "Currently Runninig"
+                "Currently Running"
         );
 
         when(movieService.getAllMovies()).thenReturn(Arrays.asList(movie1, movie2));

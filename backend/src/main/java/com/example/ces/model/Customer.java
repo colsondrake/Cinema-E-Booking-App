@@ -4,24 +4,25 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.List;
 
 @Document(collection = "users")
-public class WebUser extends User {
+public class Customer extends User {
 
     private String shippingAddress;
     private List<PaymentCard> paymentCards; // Max 3 cards per user
     private boolean isSubscribed = false; // Promotions
+    private UserStatus status; // Active, Inactive, Suspended
 
     // Default constructor
-    public WebUser() {
+    public Customer() {
         super();
     }
 
     // Convenience constructor with id
-    public WebUser(String id) {
+    public Customer(String id) {
         super(id);
     }
 
     // Full constructor
-    public WebUser(String id, String name, String email, String password,
+    public Customer(String id, String name, String email, String password,
             String phone, String homeAddress, boolean verified,
             String verificationToken, String resetToken,
             List<PaymentCard> paymentCards, String shippingAddress,
@@ -60,5 +61,13 @@ public class WebUser extends User {
 
     public void setSubscribed(boolean isSubscribed) {
         this.isSubscribed = isSubscribed;
+    }
+
+    public UserStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(UserStatus status) {
+        this.status = status;
     }
 }
