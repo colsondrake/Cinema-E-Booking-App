@@ -82,11 +82,9 @@ const Movies = () => {
     fetchMovies();
   }, [search, genres]);
 
-
   // Loading and error states
   // if (loading) return <div className="text-center mt-10 text-lg">Loading movies...</div>;
   if (error) return <div className="text-center mt-10 text-red-500">Error: {error}</div>;
-
 
   // List of available genres for filtering
   const GENRES = [
@@ -105,8 +103,6 @@ const Movies = () => {
     "Mystery", 
     "Western",
   ];
-
-
 
   /**
    * Split movies into 'Currently Running' and 'Coming Soon'.
@@ -162,20 +158,20 @@ const Movies = () => {
             </h5>
             {/* Rating */}
             <div className="mt-2 text-center">
-              <span className="font-semibold text-sm text-blue-600 dark:text-blue-300">Rating:</span>
-              <span className="ml-1 text-sm text-yellow-500 dark:text-yellow-400">{movie.rating}</span>
+              <span className="font-semibold text-sm text-blue-300">Rating:</span>
+              <span className="ml-1 text-sm text-yellow-400">{movie.rating}</span>
             </div>
           </div>
           {/* Showtimes */}
           {movie.status == "Currently Running" && (
             <div className="mt-2 text-center">
-              <span className="font-semibold text-sm text-blue-600 dark:text-blue-300">Showtimes:</span>
+              <span className="font-semibold text-sm text-blue-300">Showtimes:</span>
               <div className="flex flex-wrap gap-2 mt-1 justify-center">
                 {movie.showtimes && movie.showtimes.length > 0 ? (
                   movie.showtimes.map((showtime: string, idx: number) => (
                     <button
                       key={idx}
-                      className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 rounded text-xs"
+                      className="px-2 py-1 bg-blue-900 text-blue-200 rounded text-xs"
                       disabled={showtime === "Coming Soon"}
                     >
                       {showtime}
@@ -195,9 +191,14 @@ const Movies = () => {
 
   // Main render
   return (
-    <section className="py-14 md:py-24 bg-white dark:bg-[#0b1727] text-[#373572] dark:text-white min-h-screen">
+    // Full component
+    <section className="py-14 md:py-24 bg-[#0b1727] text-white min-h-screen">
+
+      {/* Container for all component parts */}
       <div className="container px-4 mx-auto">
+
         <div className="grid grid-cols-12 justify-center mb-6 md:mb-12">
+
           {/* Heading Section */}
           <div className="col-span-12 lg:col-span-6 lg:col-start-4 text-center">
             <p className="mb-2">Welcome To</p>
@@ -205,35 +206,40 @@ const Movies = () => {
               CINEMAGIC
             </h2>
           </div>
+
+          {/* Functionalities Bar 1: Search, Reset */}
           <div className="col-span-12 text-center mt-6 flex flex-col items-center gap-4">
-            {/* Functionalities Bar 1: Search, Reset */}
             <div className="flex flex-row gap-2 w-full max-w-2xl justify-center items-center">
+
               {/* Search Box */}
               <input
                 type="text"
                 placeholder="Search movies by title..."
                 value={searchInput}
                 onChange={e => setSearchInput(e.target.value)}
-                className="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-[#17233a] dark:border-gray-700 dark:text-white"
+                className="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-[#17233a] border-gray-700 text-white"
                 aria-label="Search movies"
               />
+
               {/* Search Button */}
               <button
                 onClick={() => {
                   setSearch(searchInput); 
                 }}
-                className="px-4 py-2 bg-gray-200 dark:bg-[#17233a] text-[#373572] dark:text-white rounded-md border border-gray-300 dark:border-gray-700 hover:bg-blue-600 hover:text-white transition-colors duration-200 cursor-pointer"
+                className="px-4 py-2 bg-[#17233a] text-white rounded-md border border-gray-700 hover:bg-blue-600 hover:text-white transition-colors duration-200 cursor-pointer"
               >
                 Search
               </button>
+
               {/* Reset Button */}
               <button
                 onClick={() => { setSearch(""); setGenres([]); }}
-                className="px-4 py-2 bg-gray-200 dark:bg-[#17233a] text-[#373572] dark:text-white rounded-md border border-gray-300 dark:border-gray-700 hover:bg-blue-600 hover:text-white transition-colors duration-200 cursor-pointer"
+                className="px-4 py-2 bg-[#17233a] text-white rounded-md border border-gray-700 hover:bg-blue-600 hover:text-white transition-colors duration-200 cursor-pointer"
               >
                 Reset
               </button>
             </div>
+
             {/* Functionalities Bar 2: Genre Filter Selection Buttons */}
             <div className="flex flex-row gap-2 w-full max-w-2xl justify-center items-center">
               {GENRES.map((g: string, index: number) => {
@@ -242,7 +248,7 @@ const Movies = () => {
                   <button
                     key={index}
                     className={`px-4 py-2 rounded-md border transition-colors duration-200 cursor-pointer 
-                      ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-200 dark:bg-[#17233a] text-[#373572] dark:text-white border-gray-300 dark:border-gray-700 hover:bg-blue-600 hover:text-white'}`}
+                      ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-[#17233a] text-white border-gray-700 hover:bg-blue-600 hover:text-white'}`}
                     onClick={() => {
                       setGenres((prev: string[]) =>
                         prev.includes(g)
