@@ -81,19 +81,19 @@ public class UserService {
             profileChanged = true;
         }
 
-        // Update address if this is a WebUser
-        if (user instanceof WebUser) {
-            WebUser webUser = (WebUser) user;
+        // Update address if this is a Customer
+        if (user instanceof Customer) {
+            Customer Customer = (Customer) user;
             
             // Update home address (only 1 allowed)
             if (profileDTO.getHomeAddress() != null) {
-                webUser.setHomeAddress(profileDTO.getHomeAddress());
+                Customer.setHomeAddress(profileDTO.getHomeAddress());
                 profileChanged = true;
             }
 
             // Update subscription preference
-            if (profileDTO.isSubscribeToPromotions() != webUser.isSubscribedToPromotions()) {
-                webUser.setIsSubscribedToPromotions(profileDTO.isSubscribeToPromotions());
+            if (profileDTO.isSubscribeToPromotions() != Customer.isSubscribedToPromotions()) {
+                Customer.setIsSubscribedToPromotions(profileDTO.isSubscribeToPromotions());
                 profileChanged = true;
             }
         }
@@ -121,14 +121,14 @@ public class UserService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if (!(user instanceof WebUser)) {
+        if (!(user instanceof Customer)) {
             throw new IllegalArgumentException("Only web users can have payment cards");
         }
 
-        WebUser webUser = (WebUser) user;
+        Customer customer = (Customer) user;
 
         // Check if user already has 3 cards
-        if (webUser.getPaymentCards() != null && webUser.getPaymentCards().size() >= 3) {
+        if (customer.getPaymentCards() != null && customer.getPaymentCards().size() >= 3) {
             throw new IllegalArgumentException("Maximum 3 payment cards allowed");
         }
 
@@ -141,8 +141,8 @@ public class UserService {
         }
 
         // Add to user's cards
-        webUser.addPaymentCard(card);
-        userRepository.save(webUser);
+        customer.addPaymentCard(card);
+        userRepository.save(customer);
 
         return card;
     }

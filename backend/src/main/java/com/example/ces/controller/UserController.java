@@ -32,7 +32,7 @@
 
 // import com.example.ces.model.PaymentCard;
 // import com.example.ces.model.User;
-// import com.example.ces.model.WebUser;
+// import com.example.ces.model.customer;
 // import com.example.ces.service.UserService;
 // import com.example.ces.dto.UserProfileDTO;
 // import com.example.ces.dto.PasswordChangeDTO;
@@ -65,10 +65,10 @@
 //                 response.put("phone", user.getPhone());
 //                 response.put("emailVerified", user.isEmailVerified());
 //                 response.put("isActive", user.isActive());
-//                 if (user instanceof WebUser webUser) {
-//                     response.put("homeAddress", webUser.getHomeAddress());
-//                     response.put("paymentCards", webUser.getPaymentCards());
-//                     response.put("subscribeToPromotions", webUser.isSubscribedToPromotions());
+//                 if (user instanceof customer customer) {
+//                     response.put("homeAddress", customer.getHomeAddress());
+//                     response.put("paymentCards", customer.getPaymentCards());
+//                     response.put("subscribeToPromotions", customer.isSubscribedToPromotions());
 //                 }
 //                 return ResponseEntity.ok(response);
 //             })
@@ -134,8 +134,8 @@
 //     public ResponseEntity<?> getPaymentCards(@PathVariable String id) {
 //         return userService.getUserById(id)
 //             .map(user -> {
-//                 if (user instanceof WebUser webUser) {
-//                     return ResponseEntity.ok(webUser.getPaymentCards());
+//                 if (user instanceof customer customer) {
+//                     return ResponseEntity.ok(customer.getPaymentCards());
 //                 }
 //                 return ResponseEntity.ok(Map.of("cards", new Object[0]));
 //             })
@@ -163,7 +163,7 @@ package com.example.ces.controller;
 
 import com.example.ces.model.PaymentCard;
 import com.example.ces.model.User;
-import com.example.ces.model.WebUser;
+import com.example.ces.model.Customer;
 import com.example.ces.service.UserService;
 import com.example.ces.dto.UserProfileDTO;
 import com.example.ces.dto.PasswordChangeDTO;
@@ -196,10 +196,10 @@ public class UserController {
                 response.put("phone", user.getPhone());
                 response.put("emailVerified", user.isEmailVerified());
                 response.put("isActive", user.isActive());
-                if (user instanceof WebUser webUser) {
-                    response.put("homeAddress", webUser.getHomeAddress());
-                    response.put("paymentCards", webUser.getPaymentCards());
-                    response.put("subscribeToPromotions", webUser.isSubscribedToPromotions());
+                if (user instanceof Customer customer) {
+                    response.put("homeAddress", customer.getHomeAddress());
+                    response.put("paymentCards", customer.getPaymentCards());
+                    response.put("subscribeToPromotions", customer.isSubscribedToPromotions());
                 }
                 return ResponseEntity.ok(response);
             })
@@ -274,8 +274,8 @@ public class UserController {
     public ResponseEntity<?> getPaymentCards(@PathVariable String id) {
         return userService.getUserById(id)
             .map(user -> {
-                if (user instanceof WebUser webUser) {
-                    return ResponseEntity.ok(webUser.getPaymentCards());
+                if (user instanceof Customer customer) {
+                    return ResponseEntity.ok(customer.getPaymentCards());
                 }
                 return ResponseEntity.ok(Map.of("cards", new Object[0]));
             })
