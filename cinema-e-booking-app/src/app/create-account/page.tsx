@@ -71,7 +71,7 @@ const SignupPage = () => {
     };
 
     createAccount(account as any);
-    router.push("/account");
+    router.push("/login");
   };
 
   return (

@@ -31,7 +31,7 @@ export type Account = {
 
 type AccountContextType = {
   account: Account | null;
-  createAccount: (acc: Account) => void;
+  createAccount: (acc: Account) => Promise<boolean>;
   login: (email: string, password: string) => boolean;
   logout: () => void;
   updateAccount: (patch: Partial<Account>) => void;
@@ -53,36 +53,69 @@ const maskCardNumber = (num: string) => {
 export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [account, setAccount] = useState<Account | null>(null);
 
-  useEffect(() => {
-    // load from sessionStorage if present
-    try {
-      const raw = sessionStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed: Account = JSON.parse(raw);
-        setAccount(parsed);
-      }
-    } catch (e) {
-      console.warn("Failed to load account from storage", e);
-    }
-  }, []);
+  // useEffect(() => {
+  //   // load from sessionStorage if present
+  //   try {
+  //     const raw = sessionStorage.getItem(STORAGE_KEY);
+  //     if (raw) {
+  //       const parsed: Account = JSON.parse(raw);
+  //       setAccount(parsed);
+  //     }
+  //   } catch (e) {
+  //     console.warn("Failed to load account from storage", e);
+  //   }
+  // }, []);
 
-  const persist = (acc: Account | null) => {
-    try {
-      if (acc) {
-        // mask card numbers before persisting
-        const safe = { ...acc, paymentCards: acc.paymentCards?.map(c => ({ ...c, cardNumber: maskCardNumber(c.cardNumber) })) };
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(safe));
-      } else {
-        sessionStorage.removeItem(STORAGE_KEY);
-      }
-    } catch (e) {
-      console.warn("Failed to persist account", e);
-    }
-  };
+  // const persist = (acc: Account | null) => {
+  //   try {
+  //     if (acc) {
+  //       // mask card numbers before persisting
+  //       const safe = { ...acc, paymentCards: acc.paymentCards?.map(c => ({ ...c, cardNumber: maskCardNumber(c.cardNumber) })) };
+  //       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(safe));
+  //     } else {
+  //       sessionStorage.removeItem(STORAGE_KEY);
+  //     }
+  //   } catch (e) {
+  //     console.warn("Failed to persist account", e);
+  //   }
+  // };
 
-  const createAccount = (acc: Account) => {
-    setAccount(acc);
-    persist(acc);
+  const createAccount = async (acc: Account): Promise<boolean> => {
+    // Prepare payload expected by backend User model
+    const payload: any = {
+      // backend expects a single name field; combine first and last
+      name: `${acc.firstName || ""} ${acc.lastName || ""}`.trim(),
+      email: acc.email,
+      password: acc.password,
+      // include addresses or payment cards if backend supports them
+      billingAddress: acc.billingAddress,
+      homeAddress: acc.homeAddress
+    };
+
+    try {
+      const res = await fetch("http://localhost:8080/api/users/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        // Optionally read error body for debugging
+        const err = await res.json().catch(() => null);
+        console.warn("Registration failed", err || res.statusText);
+        return false;
+      }
+
+      // Successful registration — keep local account state for the session
+      setAccount(acc);
+      // persist(acc);
+      return true;
+    } catch (e) {
+      console.warn("Failed to register user", e);
+      return false;
+    }
   };
 
   const login = (email: string, password: string) => {
@@ -110,7 +143,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateAccount = (patch: Partial<Account>) => {
     setAccount(prev => {
       const updated = { ...((prev as Account) || {}), ...patch } as Account;
-      persist(updated);
+      // persist(updated);
       return updated;
     });
   };
@@ -121,7 +154,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (existing.length >= 3) return false;
     const updated: Account = { ...account, paymentCards: [...existing, card] };
     setAccount(updated);
-    persist(updated);
+    // persist(updated);
     return true;
   };
 
@@ -129,7 +162,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!account) return;
     const updated: Account = { ...account, paymentCards: (account.paymentCards || []).filter(c => c.id !== cardId) };
     setAccount(updated);
-    persist(updated);
+    // persist(updated);
   };
 
   return (
