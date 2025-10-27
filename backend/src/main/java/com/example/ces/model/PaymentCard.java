@@ -1,9 +1,7 @@
 package com.example.ces.model;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collection = "paymentCards")
 public class PaymentCard {
     // Define data members
     @Id

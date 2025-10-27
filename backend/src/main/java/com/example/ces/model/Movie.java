@@ -17,7 +17,7 @@ public class Movie {
     private String description;
     private String posterUrl;
     private String trailerUrl;
-    private List<String> showtimes; // Change this to an array of showtimes
+    private List<Showtime> showtimes; // Change this to an array of showtimes
     private MovieStatus status;
 
     // Default constructor
@@ -28,7 +28,7 @@ public class Movie {
     public Movie(String id, String title, String director, int year,
             List<String> genres,
             String rating, String description, String posterUrl,
-            String trailerUrl, List<String> showtimes, String status) {
+            String trailerUrl, List<Showtime> showtimes, String status) {
         setId(id);
         setTitle(title);
         setDirector(director);
@@ -115,11 +115,11 @@ public class Movie {
         this.trailerUrl = trailerUrl;
     }
 
-    public List<String> getShowtimes() {
+    public List<Showtime> getShowtimes() {
         return showtimes;
     }
 
-    public void setShowtimes(List<String> showtimes) {
+    public void setShowtimes(List<Showtime> showtimes) {
         this.showtimes = showtimes;
     }
 
