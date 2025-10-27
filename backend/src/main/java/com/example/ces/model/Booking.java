@@ -22,7 +22,6 @@ public class Booking {
     }
 
     // Getters and Setters
-    // ...existing code...
     public int getBookingId() {
         return bookingId;
     }
@@ -94,5 +93,4 @@ public class Booking {
     public void setStatus(BookingStatus status) {
         this.status = status;
     }
-    // ...existing code...
 }

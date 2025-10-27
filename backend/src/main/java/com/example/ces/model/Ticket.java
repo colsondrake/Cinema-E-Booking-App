@@ -11,6 +11,7 @@ public class Ticket {
     private TicketType type;
     private double price;
     private Seat seat;
+    private TicketTypePrice finalPrice; // To determine price based on type
 
     // Default constructor
     public Ticket() {
