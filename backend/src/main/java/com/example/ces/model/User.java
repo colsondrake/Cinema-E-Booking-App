@@ -257,20 +257,12 @@ public abstract class User {
         // This is now handled in WebUser with proper Address object
     }
 
-    public boolean getVerified() {
-        return verified;
+    public boolean getIsLoggedIn() {
+        return isLoggedIn;
     }
 
-    public void setVerified(boolean verified) {
-        this.verified = verified;
-    }
-
-    public String getVerificationToken() {
-        return verificationToken;
-    }
-
-    public void setVerificationToken(String verificationToken) {
-        this.verificationToken = verificationToken;
+    public void setIsLoggedIn(boolean isLoggedIn) {
+        this.isLoggedIn = isLoggedIn;
     }
 
     public boolean isEmailVerified() {
