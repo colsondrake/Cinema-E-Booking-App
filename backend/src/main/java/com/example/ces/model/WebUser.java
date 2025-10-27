@@ -4,26 +4,26 @@
 // import org.springframework.data.mongodb.core.mapping.Document;
 // import java.util.List;
 
-// // WebUser class extending User
+// // Customer class extending User
 // @Document(collection = "users")
-// public class WebUser extends User{
-//     // Data fields for WebUser class can be added here
+// public class Customer extends User{
+//     // Data fields for Customer class can be added here
 //     private String shippingAddress;
 //     private List<PaymentCard> paymentCards; // Max 3 cards per user, Optional upon registration
 //     private boolean emailVerified = false; // To track if the user has verified their email
 //     private boolean isSubscribed = false; // To track if the user is subscribed to promotions
     
 //     // Default constructor 
-//     public WebUser() {
+//     public Customer() {
 //         super();
 //     }
 
 //     // Convenience constructor with id
-//     public WebUser(String id) {
+//     public Customer(String id) {
 //         super(id);
 //     }
 //     // Convenience constructor
-//     public WebUser(String id, String name, String email, String password,
+//     public Customer(String id, String name, String email, String password,
 //             String phone, String homeAddress, boolean isLoggedIn, 
 //             List<PaymentCard> paymentCards, String shippingAddress,
 //             boolean emailVerified, boolean isSubscribed) {
@@ -35,7 +35,7 @@
 //     }
 
 //     // Constructor for email verified status
-//     public WebUser(boolean emailVerified) {
+//     public Customer(boolean emailVerified) {
 //         setEmailVerified(emailVerified);
 //     }
 //     // Getters and setters
@@ -85,11 +85,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * WebUser class extends User and represents standard cinema users.
+ * Customer class extends User and represents standard cinema users.
  * Supports 1 home address, up to 3 payment cards, and subscription preferences.
  */
 @Document(collection = "users")
-public class WebUser extends User {
+public class Customer extends User {
 
     private Address homeAddress; // Users can have only 1 home address
     private String shippingAddress; // For backward compatibility with older records
@@ -102,18 +102,18 @@ public class WebUser extends User {
 
     // ---------------- Constructors ----------------
 
-    public WebUser() {
+    public Customer() {
         super();
         setRole("USER");
     }
 
-    public WebUser(String id) {
+    public Customer(String id) {
         super(id);
         setRole("USER");
     }
 
     // Backward-compatible constructor (with old fields)
-    public WebUser(String id, String name, String email, String password,
+    public Customer(String id, String name, String email, String password,
                    String phone, String homeAddress, boolean isLoggedIn,
                    List<PaymentCard> paymentCards, String shippingAddress,
                    boolean emailVerified, boolean isSubscribed) {
@@ -127,7 +127,7 @@ public class WebUser extends User {
     }
 
     // Modern constructor (used internally by service)
-    public WebUser(String id, String firstName, String lastName, String email,
+    public Customer(String id, String firstName, String lastName, String email,
                    String password, String phone, boolean isLoggedIn,
                    boolean emailVerified, boolean isActive,
                    Address homeAddress, List<PaymentCard> paymentCards,
@@ -141,7 +141,7 @@ public class WebUser extends User {
     }
 
     // Constructor used for quick initialization of verification status
-    public WebUser(boolean emailVerified) {
+    public Customer(boolean emailVerified) {
         super();
         setEmailVerified(emailVerified);
         setRole("USER");
@@ -248,7 +248,7 @@ public class WebUser extends User {
 
     @Override
     public String toString() {
-        return String.format("WebUser{id='%s', name='%s', email='%s', verified=%s, subscribed=%s}",
+        return String.format("Customer{id='%s', name='%s', email='%s', verified=%s, subscribed=%s}",
                 getId(), getFullName(), getEmail(), isEmailVerified(), isSubscribedToPromotions());
     }
 }
