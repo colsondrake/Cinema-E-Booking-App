@@ -60,9 +60,9 @@ public class MovieControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().json(
                         "[{" +
-                                "'id':'1','title':'The Matrix','director':'Lana Wachowski, Lilly Wachowski','year':1999,'genre':['Action'],'rating':'R','description':'A computer hacker learns about reality.','posterUrl':'poster_url_here','trailerUrl':'trailer_url_here','showtimes':['2:00 PM','5:00 PM','8:00 PM']" +
+                                "'id':'1','title':'The Matrix','director':'Lana Wachowski, Lilly Wachowski','year':1999,'genres':['Action'],'rating':'R','description':'A computer hacker learns about reality.','posterUrl':'poster_url_here','trailerUrl':'trailer_url_here','showtimes':['2:00 PM','5:00 PM','8:00 PM']" +
                                 "},{" +
-                                "'id':'2','title':'Inception','director':'Christopher Nolan','year':2010,'genre':['Sci-Fi'],'rating':'PG-13','description':'A thief steals corporate secrets through dream-sharing technology.','posterUrl':'poster_url_here','trailerUrl':'trailer_url_here','showtimes':['1:00 PM','4:00 PM','7:00 PM']" +
+                                "'id':'2','title':'Inception','director':'Christopher Nolan','year':2010,'genres':['Sci-Fi'],'rating':'PG-13','description':'A thief steals corporate secrets through dream-sharing technology.','posterUrl':'poster_url_here','trailerUrl':'trailer_url_here','showtimes':['1:00 PM','4:00 PM','7:00 PM']" +
                                 "}]"));
     }
 }
