@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>Confirm Your Email - CES Cinema</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f9f9f9; color: #333; max-width: 600px; margin: auto; padding: 20px; }
+    .container { background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .btn { background: #457b9d; color: #fff; padding: 12px 24px; border-radius: 5px; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Welcome, <span th:text="${userName}">User</span>!</h2>
+    <p>Thank you for registering with CES Cinema. Please confirm your email address to activate your account.</p>
+    <p style="text-align:center">
+      <a th:href="${confirmationUrl}" class="btn">Verify Email</a>
+    </p>
+    <p>If the button doesn't work, copy and paste this link into your browser:</p>
+    <p th:text="${confirmationUrl}" style="background:#f0f0f0;padding:10px;border-radius:5px;"></p>
+    <p>This link expires in 24 hours.</p>
+    <hr/>
+    <p style="font-size:12px;text-align:center;">&copy; 2024 CES Cinema. All rights reserved.</p>
+  </div>
+</body>
+</html>
