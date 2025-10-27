@@ -10,25 +10,25 @@ public class Ticket {
     private int bookingId;
     private TicketType type;
     private double price;
-    private int seatNumber;
+    private Seat seat;
 
     // Default constructor
     public Ticket() {
     }
 
     // Convenience constructor (using enum)
-    public Ticket(int ticketId, int showtimeId, int bookingId, TicketType type, double price, int seatNumber) {
+    public Ticket(int ticketId, int showtimeId, int bookingId, TicketType type, double price, Seat seat) {
         setTicketId(ticketId);
         setShowtimeId(showtimeId);
         setBookingId(bookingId);
         setType(type);
         setPrice(price);
-        setSeatNumber(seatNumber);
+        setSeat(seat);
     }
 
     // Convenience constructor accepting String for type
-    public Ticket(int ticketId, int showtimeId, int bookingId, String type, double price, int seatNumber) {
-        this(ticketId, showtimeId, bookingId, (TicketType) null, price, seatNumber);
+    public Ticket(int ticketId, int showtimeId, int bookingId, String type, double price, Seat seat) {
+        this(ticketId, showtimeId, bookingId, (TicketType) null, price, seat);
         setType(type);
     }
 
@@ -89,11 +89,17 @@ public class Ticket {
         this.price = price;
     }
 
-    public int getSeatNumber() {
-        return seatNumber;
+    // Seat accessors
+    public Seat getSeat() {
+        return seat;
     }
 
-    public void setSeatNumber(int seatNumber) {
-        this.seatNumber = seatNumber;
+    public void setSeat(Seat seat) {
+        this.seat = seat;
+    }
+
+    // Convenience to get the seat number from the Seat object (returns null if seat not set)
+    public String getSeatNumber() {
+        return seat != null ? seat.getSeatNumber() : null;
     }
 }

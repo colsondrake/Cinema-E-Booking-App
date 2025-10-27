@@ -28,7 +28,7 @@ public class Movie {
     public Movie(String id, String title, String director, int year,
             List<String> genres,
             String rating, String description, String posterUrl,
-            String trailerUrl, List<Showtime> showtimes, String status) {
+            String trailerUrl, List<Showtime> showtimes, MovieStatus status) {
         setId(id);
         setTitle(title);
         setDirector(director);
@@ -143,4 +143,5 @@ public class Movie {
             this.status = null;
         }
     }
+    
 }

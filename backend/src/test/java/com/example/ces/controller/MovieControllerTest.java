@@ -1,6 +1,10 @@
 package com.example.ces.controller;
 
 import com.example.ces.model.Movie;
+import com.example.ces.model.MovieStatus;
+import com.example.ces.model.Showtime;
+import com.example.ces.model.Showtime;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -36,8 +40,12 @@ public class MovieControllerTest {
                 "A computer hacker learns about reality.",
                 "poster_url_here",
                 "trailer_url_here",
-                Arrays.asList("2:00 PM", "5:00 PM", "8:00 PM"),
-                "Coming Soon"
+                Arrays.asList(
+                        new Showtime("2:00 PM"),
+                        new Showtime("5:00 PM"),
+                        new Showtime("8:00 PM")
+                ),
+                MovieStatus.Active
         );
 
         Movie movie2 = new Movie(
@@ -50,8 +58,12 @@ public class MovieControllerTest {
                 "A thief steals corporate secrets through dream-sharing technology.",
                 "poster_url_here",
                 "trailer_url_here",
-                Arrays.asList("1:00 PM", "4:00 PM", "7:00 PM"),
-                "Currently Running"
+                Arrays.asList(
+                        new Showtime("1:00 PM"),
+                        new Showtime("4:00 PM"),
+                        new Showtime("7:00 PM")
+                ),
+                MovieStatus.ComingSoon
         );
 
         when(movieService.getAllMovies()).thenReturn(Arrays.asList(movie1, movie2));
