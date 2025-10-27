@@ -45,7 +45,7 @@ public class MovieControllerTest {
                         new Showtime("5:00 PM"),
                         new Showtime("8:00 PM")
                 ),
-                MovieStatus.Active
+                "Now Running"
         );
 
         Movie movie2 = new Movie(
@@ -63,7 +63,7 @@ public class MovieControllerTest {
                         new Showtime("4:00 PM"),
                         new Showtime("7:00 PM")
                 ),
-                MovieStatus.ComingSoon
+                "Coming Soon"
         );
 
         when(movieService.getAllMovies()).thenReturn(Arrays.asList(movie1, movie2));
