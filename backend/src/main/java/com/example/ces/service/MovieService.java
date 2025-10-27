@@ -3,7 +3,11 @@ package com.example.ces.service;
 import com.example.ces.model.Movie;
 import com.example.ces.repository.MovieRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import org.springframework.stereotype.Service;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
@@ -23,17 +27,30 @@ public class MovieService {
 
     @EventListener(ContextRefreshedEvent.class)
     public void init() {
-        if (movieRepository.count() == 0) {
+        boolean empty = movieRepository.count() == 0;
+        System.out.println("MovieService.init: movies in DB = " + movieRepository.count());
+        if (empty) {
+            InputStream is = getClass().getResourceAsStream("/data.json");
+            if (is == null) {
+                System.err.println("MovieService.init: could not find /data.json on classpath. Put data.json in src/main/resources/");
+                return;
+            }
+
             try {
                 ObjectMapper mapper = new ObjectMapper();
-                InputStream is = getClass().getResourceAsStream("/data.json");
-                List<Movie> movies = mapper.readValue(is, new TypeReference<List<Movie>>() {
-                });
+                mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.registerModule(new JavaTimeModule());
+
+                List<Movie> movies = mapper.readValue(is, new TypeReference<List<Movie>>() {});
                 movieRepository.saveAll(movies);
-                System.out.println("✅ Loaded movies from data.json into MongoDB");
+                System.out.println("✅ Loaded movies from data.json into MongoDB (" + movies.size() + " items)");
             } catch (Exception e) {
+                System.err.println("MovieService.init: failed to load/parse data.json");
                 e.printStackTrace();
             }
+        } else {
+            System.out.println("MovieService.init: skipping load because DB already has data");
         }
     }
 

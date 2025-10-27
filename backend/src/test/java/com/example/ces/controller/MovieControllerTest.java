@@ -1,6 +1,10 @@
 package com.example.ces.controller;
 
 import com.example.ces.model.Movie;
+import com.example.ces.model.MovieStatus;
+import com.example.ces.model.Showtime;
+import com.example.ces.model.Showtime;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -36,8 +40,12 @@ public class MovieControllerTest {
                 "A computer hacker learns about reality.",
                 "poster_url_here",
                 "trailer_url_here",
-                Arrays.asList("2:00 PM", "5:00 PM", "8:00 PM"),
-                "Coming Soon"
+                Arrays.asList(
+                        new Showtime("2:00 PM"),
+                        new Showtime("5:00 PM"),
+                        new Showtime("8:00 PM")
+                ),
+                MovieStatus.Active
         );
 
         Movie movie2 = new Movie(
@@ -50,8 +58,12 @@ public class MovieControllerTest {
                 "A thief steals corporate secrets through dream-sharing technology.",
                 "poster_url_here",
                 "trailer_url_here",
-                Arrays.asList("1:00 PM", "4:00 PM", "7:00 PM"),
-                "Currently Runninig"
+                Arrays.asList(
+                        new Showtime("1:00 PM"),
+                        new Showtime("4:00 PM"),
+                        new Showtime("7:00 PM")
+                ),
+                MovieStatus.ComingSoon
         );
 
         when(movieService.getAllMovies()).thenReturn(Arrays.asList(movie1, movie2));
@@ -60,9 +72,9 @@ public class MovieControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().json(
                         "[{" +
-                                "'id':'1','title':'The Matrix','director':'Lana Wachowski, Lilly Wachowski','year':1999,'genre':['Action'],'rating':'R','description':'A computer hacker learns about reality.','posterUrl':'poster_url_here','trailerUrl':'trailer_url_here','showtimes':['2:00 PM','5:00 PM','8:00 PM']" +
+                                "'id':'1','title':'The Matrix','director':'Lana Wachowski, Lilly Wachowski','year':1999,'genres':['Action'],'rating':'R','description':'A computer hacker learns about reality.','posterUrl':'poster_url_here','trailerUrl':'trailer_url_here','showtimes':['2:00 PM','5:00 PM','8:00 PM']" +
                                 "},{" +
-                                "'id':'2','title':'Inception','director':'Christopher Nolan','year':2010,'genre':['Sci-Fi'],'rating':'PG-13','description':'A thief steals corporate secrets through dream-sharing technology.','posterUrl':'poster_url_here','trailerUrl':'trailer_url_here','showtimes':['1:00 PM','4:00 PM','7:00 PM']" +
+                                "'id':'2','title':'Inception','director':'Christopher Nolan','year':2010,'genres':['Sci-Fi'],'rating':'PG-13','description':'A thief steals corporate secrets through dream-sharing technology.','posterUrl':'poster_url_here','trailerUrl':'trailer_url_here','showtimes':['1:00 PM','4:00 PM','7:00 PM']" +
                                 "}]"));
     }
 }

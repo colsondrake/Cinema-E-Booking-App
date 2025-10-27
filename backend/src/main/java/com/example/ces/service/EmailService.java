@@ -1,73 +1,82 @@
 package com.example.ces.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.SimpleMailMessage;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import java.util.Map;
 
 @Service
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    @Autowired
+    private JavaMailSender mailSender;
 
     @Autowired
-    public EmailService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
+    private TemplateEngine templateEngine;
+
+    @Value("${spring.mail.username}")
+    private String fromEmail;
+
+    @Value("${app.base.url:http://localhost:8080}")
+    private String baseUrl;
+
+    /** Registration Confirmation Email */
+    public void sendRegistrationConfirmationEmail(String toEmail, String userName, String confirmationToken) {
+        String subject = "Welcome to CES Cinema - Please Verify Your Email";
+        String confirmationUrl = baseUrl + "/api/auth/verify-email?token=" + confirmationToken;
+
+        Context context = new Context();
+        context.setVariables(Map.of("userName", userName, "confirmationUrl", confirmationUrl));
+        sendHtmlEmail(toEmail, subject, "email-templates/registration-confirmation", context);
     }
 
-    /**
-     * Send a simple email.
-     *
-     * @param to      recipient email
-     * @param subject email subject
-     * @param text    email body
-     */
-    public void sendEmail(String to, String subject, String text) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(text);
+    /** Password Reset Email */
+    public void sendPasswordResetEmail(String toEmail, String userName, String resetToken) {
+        String subject = "CES Cinema - Password Reset Request";
+        String resetUrl = baseUrl + "/reset-password?token=" + resetToken;
 
-        mailSender.send(message);
+        Context context = new Context();
+        context.setVariables(Map.of("userName", userName, "resetUrl", resetUrl));
+        sendHtmlEmail(toEmail, subject, "email-templates/password-reset", context);
     }
 
-    /**
-     * Send verification email for registration.
-     *
-     * @param to    recipient email
-     * @param token verification token
-     */
-    public void sendVerificationEmail(String to, String token) {
-        String subject = "Confirm your registration";
-        String verificationLink = "http://localhost:3000/verify?token=" + token; // frontend URL
-        String text = "Thank you for registering! Click the link to verify your account:\n" + verificationLink;
+    /** Profile Change Notification */
+    public void sendProfileChangeNotification(String toEmail, String userName, String changeType) {
+        String subject = "CES Cinema - Your Profile Has Been Updated";
 
-        sendEmail(to, subject, text);
+        Context context = new Context();
+        context.setVariables(Map.of(
+                "userName", userName,
+                "changeType", changeType,
+                "changeTime", new java.util.Date()
+        ));
+        sendHtmlEmail(toEmail, subject, "email-templates/profile-changed", context);
     }
 
-    /**
-     * Send password reset email.
-     *
-     * @param to    recipient email
-     * @param token reset token
-     */
-    public void sendPasswordResetEmail(String to, String token) {
-        String subject = "Password Reset Request";
-        String resetLink = "http://localhost:3000/reset-password?token=" + token; // frontend URL
-        String text = "Click the link below to reset your password:\n" + resetLink;
+    /** Core reusable HTML email sender */
+    private void sendHtmlEmail(String toEmail, String subject, String templatePath, Context context) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-        sendEmail(to, subject, text);
-    }
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
 
-    /**
-     * Notify user of profile changes.
-     *
-     * @param to recipient email
-     */
-    public void sendProfileChangeNotification(String to) {
-        String subject = "Profile Updated";
-        String text = "Your profile information has been updated successfully. If this was not you, please contact support.";
+            String htmlContent = templateEngine.process(templatePath, context);
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
 
-        sendEmail(to, subject, text);
+            System.out.println("Email sent successfully to: " + toEmail);
+        } catch (MessagingException e) {
+            System.err.println("Failed to send email to: " + toEmail);
+            throw new RuntimeException("Failed to send email", e);
+        }
     }
 }

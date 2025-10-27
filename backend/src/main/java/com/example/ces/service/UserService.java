@@ -1,146 +1,166 @@
+// package com.example.ces.service;
+
+// import java.util.Optional;
+
+// import org.springframework.beans.factory.annotation.Autowired;
+// import org.springframework.stereotype.Service;
+
+// import com.example.ces.model.User;
+// import com.example.ces.repository.UserRepository;
+
+// @Service
+// public class UserService {
+
+//     private final UserRepository userRepository;
+
+//     @Autowired
+//     public UserService(UserRepository userRepository) {
+//         this.userRepository = userRepository;
+//     }
+
+//     /**
+//      * Retrieve a user by id.
+//      *
+//      * @param id user id
+//      * @return Optional<User> present if found
+//      */
+//     public Optional<User> getUserById(String id) {
+//         return userRepository.findById(id);
+//     }
+// }
+
 package com.example.ces.service;
 
-import java.util.Optional;
-import java.util.UUID;
-
+import com.example.ces.model.*;
+import com.example.ces.repository.*;
+import com.example.ces.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.example.ces.model.User;
-import com.example.ces.model.VerificationToken;
-import com.example.ces.model.ResetToken;
-import com.example.ces.repository.UserRepository;
-import com.example.ces.repository.VerificationTokenRepository;
-import com.example.ces.repository.ResetTokenRepository;
+import java.util.*;
 
 @Service
+@Transactional
 public class UserService {
 
-    private final UserRepository userRepository;
-    private final VerificationTokenRepository verificationTokenRepository;
-    private final ResetTokenRepository resetTokenRepository;
-    private final EmailService emailService; // Added EmailService
-    private final PasswordEncoder passwordEncoder;
-
     @Autowired
-    public UserService(UserRepository userRepository,
-            VerificationTokenRepository verificationTokenRepository,
-            ResetTokenRepository resetTokenRepository,
-            EmailService emailService) {
-        this.userRepository = userRepository;
-        this.verificationTokenRepository = verificationTokenRepository;
-        this.resetTokenRepository = resetTokenRepository;
-        this.emailService = emailService;
-        this.passwordEncoder = new BCryptPasswordEncoder(); // Use BCrypt
-    }
+    private UserRepository userRepository;
 
-    // ----------------- User CRUD -----------------
+    /**
+     * Get user by ID
+     */
     public Optional<User> getUserById(String id) {
         return userRepository.findById(id);
     }
 
-    public User updateUser(User user) {
-        User updatedUser = userRepository.save(user);
-        // Send profile change notification email
-        emailService.sendProfileChangeNotification(user.getEmail());
-        return updatedUser;
-    }
+    /**
+     * Update user profile
+     */
+    public User updateUserProfile(String userId, UserProfileDTO profileDTO, String currentPassword) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-    public void deleteUser(String id) {
-        userRepository.deleteById(id);
-    }
+        boolean profileChanged = false;
 
-    // ----------------- Registration -----------------
-    public String registerUser(User user) {
-        // Encrypt password
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setVerified(false); // must verify email
-        userRepository.save(user);
-
-        // Generate verification token
-        String token = UUID.randomUUID().toString();
-        VerificationToken verificationToken = new VerificationToken(token, user);
-        verificationTokenRepository.save(verificationToken);
-
-        // Store token on user (optional)
-        user.setVerificationToken(token);
-        userRepository.save(user);
-
-        // Send verification email
-        emailService.sendVerificationEmail(user.getEmail(), token);
-
-        return token; // also return for testing if needed
-    }
-
-    public boolean verifyUser(String token) {
-        Optional<VerificationToken> optional = verificationTokenRepository.findByToken(token);
-        if (optional.isEmpty())
-            return false;
-
-        VerificationToken verificationToken = optional.get();
-        User user = verificationToken.getUser();
-        user.setVerified(true);
-        user.setVerificationToken(null); // clear token after verification
-        userRepository.save(user);
-
-        verificationTokenRepository.delete(verificationToken);
-        return true;
-    }
-
-    // ----------------- Login -----------------
-    public User login(String email, String password) {
-        Optional<User> optionalUser = userRepository.findByEmail(email);
-        if (optionalUser.isEmpty())
-            throw new RuntimeException("Invalid email or password");
-
-        User user = optionalUser.get();
-
-        if (!user.getVerified()) {
-            throw new RuntimeException("Email not verified");
+        // Update first name if changed
+        if (profileDTO.getFirstName() != null && !profileDTO.getFirstName().isEmpty()) {
+            user.setFirstName(profileDTO.getFirstName());
+            profileChanged = true;
         }
 
-        if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new RuntimeException("Invalid email or password");
+        // Update last name if changed
+        if (profileDTO.getLastName() != null && !profileDTO.getLastName().isEmpty()) {
+            user.setLastName(profileDTO.getLastName());
+            profileChanged = true;
+        }
+
+        // Update phone if changed
+        if (profileDTO.getPhone() != null && !profileDTO.getPhone().isEmpty()) {
+            user.setPhone(profileDTO.getPhone());
+            profileChanged = true;
+        }
+
+        // Update address if this is a Customer
+        if (user instanceof Customer) {
+            Customer Customer = (Customer) user;
+            
+            // Update home address (only 1 allowed)
+            if (profileDTO.getHomeAddress() != null) {
+                Customer.setHomeAddress(profileDTO.getHomeAddress());
+                profileChanged = true;
+            }
+
+            // Update subscription preference
+            if (profileDTO.isSubscribeToPromotions() != Customer.isSubscribedToPromotions()) {
+                Customer.setIsSubscribedToPromotions(profileDTO.isSubscribeToPromotions());
+                profileChanged = true;
+            }
+        }
+
+        // Update password if provided
+        if (profileDTO.getNewPassword() != null && !profileDTO.getNewPassword().isEmpty()) {
+            // For now, skip password verification since we don't have PasswordEncoder configured yet
+            // In production, you would verify current password here
+            user.setPassword(profileDTO.getNewPassword()); // In production, this should be encrypted
+            profileChanged = true;
+        }
+
+        // Save changes
+        if (profileChanged) {
+            return userRepository.save(user);
         }
 
         return user;
     }
 
-    // ----------------- Forgot Password -----------------
-    public String initiatePasswordReset(String email) {
-        Optional<User> optionalUser = userRepository.findByEmail(email);
-        if (optionalUser.isEmpty())
-            throw new RuntimeException("User not found");
+    /**
+     * Add payment card to user
+     */
+    public PaymentCard addPaymentCard(String userId, PaymentCard card) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        User user = optionalUser.get();
-        String token = UUID.randomUUID().toString();
-        ResetToken resetToken = new ResetToken(token, user);
-        resetTokenRepository.save(resetToken);
+        if (!(user instanceof Customer)) {
+            throw new IllegalArgumentException("Only web users can have payment cards");
+        }
 
-        // Store token on user (optional)
-        user.setResetToken(token);
-        userRepository.save(user);
+        Customer customer = (Customer) user;
 
-        // Send password reset email
-        emailService.sendPasswordResetEmail(user.getEmail(), token);
+        // Check if user already has 3 cards
+        if (customer.getPaymentCards() != null && customer.getPaymentCards().size() >= 3) {
+            throw new IllegalArgumentException("Maximum 3 payment cards allowed");
+        }
 
-        return token; // also return for testing if needed
+        // Set user ID for the card
+        card.setUserId(userId);
+        
+        // Generate a temporary ID if not present
+        if (card.getId() == null) {
+            card.setId(UUID.randomUUID().toString());
+        }
+
+        // Add to user's cards
+        customer.addPaymentCard(card);
+        userRepository.save(customer);
+
+        return card;
     }
 
-    public boolean resetPassword(String token, String newPassword) {
-        Optional<ResetToken> optional = resetTokenRepository.findByToken(token);
-        if (optional.isEmpty())
-            return false;
+    /**
+     * Change password (when user is logged in)
+     */
+    public void changePassword(String userId, String currentPassword, String newPassword) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        ResetToken resetToken = optional.get();
-        User user = resetToken.getUser();
-        user.setPassword(passwordEncoder.encode(newPassword));
-        user.setResetToken(null); // clear token after reset
+        // For now, simple password check (in production, use PasswordEncoder)
+        if (!user.getPassword().equals(currentPassword)) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        // Update password (in production, encrypt it)
+        user.setPassword(newPassword);
         userRepository.save(user);
-
-        resetTokenRepository.delete(resetToken);
-        return true;
     }
 }

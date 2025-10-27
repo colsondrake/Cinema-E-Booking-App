@@ -11,13 +11,29 @@ public class Admin extends User {
         super();
     }
 
-    // Convenience constructor
-    public Admin(String id, String name, String email, String password,
-            String phone, String homeAddress, boolean verified,
-            String verificationToken, String resetToken) {
-        super(id, name, email, password, phone, homeAddress, verified,
-                verificationToken, resetToken);
+    // Convenience constructor to create Admin with only id and password (only required fields)
+    public Admin(String id, String password) {
+        // super(id, password);
     }
 
-    // Admin-specific methods can be added here later
+    // Admin-specific methods
+    public void manageMovies() {
+        // Implementation for managing movies
+    }
+    
+    public void managePromotions() {
+        // Implementation for managing promotions
+    }
+
+    public void manageTicketPrices() {
+        // Implementation for managing ticket prices
+    }
+
+    public void manageUsers() {
+        // Implementation for managing users
+    }
+
+    public void manageAdministrators() {
+        // Implementation for managing administrators
+    }
 }
