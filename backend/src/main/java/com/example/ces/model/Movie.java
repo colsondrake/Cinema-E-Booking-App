@@ -18,7 +18,7 @@ public class Movie {
     private String posterUrl;
     private String trailerUrl;
     private List<Showtime> showtimes; // Change this to an array of showtimes
-    private MovieStatus status;
+    private String status;
 
     // Default constructor
     public Movie() {
@@ -28,7 +28,7 @@ public class Movie {
     public Movie(String id, String title, String director, int year,
             List<String> genres,
             String rating, String description, String posterUrl,
-            String trailerUrl, List<Showtime> showtimes, MovieStatus status) {
+            String trailerUrl, List<Showtime> showtimes, String status) {
         setId(id);
         setTitle(title);
         setDirector(director);
@@ -123,25 +123,11 @@ public class Movie {
         this.showtimes = showtimes;
     }
 
-    public MovieStatus getStatus() {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(MovieStatus status) {
+    public void setStatus(String status) {
         this.status = status;
     }
-
-    // Convenience setter that accepts a String and maps it to the enum
-    public void setStatus(String status) {
-        if (status == null) {
-            this.status = null;
-            return;
-        }
-        try {
-            this.status = MovieStatus.valueOf(status.trim().toUpperCase().replaceAll("\\s+", "_"));
-        } catch (IllegalArgumentException e) {
-            this.status = null;
-        }
-    }
-    
 }
