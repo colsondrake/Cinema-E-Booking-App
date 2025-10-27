@@ -10,5 +10,10 @@ import com.example.ces.model.User;
 @Repository
 public interface UserRepository extends MongoRepository<User, String> {
     Optional<User> findByEmail(String email);
+
     boolean existsByEmail(String email); // for registration check
+
+    Optional<User> findByVerificationToken(String token);
+
+    Optional<User> findByResetToken(String token);
 }

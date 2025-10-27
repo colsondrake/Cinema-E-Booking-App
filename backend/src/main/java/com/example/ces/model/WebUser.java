@@ -218,7 +218,7 @@ public class WebUser extends User {
         return isSubscribed || isSubscribedToPromotions;
     }
 
-    public void setIsSubscribed(boolean isSubscribed) {
+    public void setSubscribed(boolean isSubscribed) {
         this.isSubscribed = isSubscribed;
         this.isSubscribedToPromotions = isSubscribed;
     }
