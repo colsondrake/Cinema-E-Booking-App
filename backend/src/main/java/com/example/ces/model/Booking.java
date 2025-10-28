@@ -8,7 +8,7 @@ import org.springframework.data.annotation.Id;
 public class Booking {
     @Id
     private int bookingId;
-    private Customer customer;
+    private User user;
     private Showtime showtime;
     private LocalDate bookingDate;
     private TicketTypePrice totalAmount;
@@ -30,12 +30,12 @@ public class Booking {
         this.bookingId = bookingId;
     }
 
-    public Customer getCustomer() {
-        return customer;
+    public User getUser() {
+        return user;
     }
 
-    public void setCustomer(Customer customer) {
-        this.customer = customer;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public Showtime getShowtime() {
