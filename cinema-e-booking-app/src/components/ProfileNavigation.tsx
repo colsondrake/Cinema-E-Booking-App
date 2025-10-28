@@ -9,7 +9,6 @@ export default function ProfileNavigation({ width = '600px' }) {
   const navItems = [
     { name: 'Profile Information', path: '/profile' },
     { name: 'Change Password', path: '/profile/change-password' },
-    { name: 'Order History', path: '/profile/orders' },
   ];
   
   // Add a back to home link at the top of the profile page

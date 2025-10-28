@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAccount, PaymentCard } from "../../context/AccountContext";
 import NavBar from "@/components/Navbar";
 
+import AccountNavbar from "@/components/AccountNavbar";
+
 const genId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,9)}`;
 
 const AccountPage = () => {
@@ -15,7 +17,7 @@ const AccountPage = () => {
   const [firstName, setFirstName] = useState(account?.firstName || "");
   const [lastName, setLastName] = useState(account?.lastName || "");
   const [email, setEmail] = useState(account?.email || "");
-  const [password, setPassword] = useState(account?.password || "");
+  
 
   const [billing, setBilling] = useState(account?.billingAddress || { street: "", city: "", state: "", postalCode: "", country: "" });
   const [home, setHome] = useState(account?.homeAddress || { street: "", city: "", state: "", postalCode: "", country: "" });
@@ -26,6 +28,8 @@ const AccountPage = () => {
   const [cvv, setCvv] = useState("");
 
   const [error, setError] = useState<string | null>(null);
+
+  
 
   if (!account) {
     return (
@@ -42,7 +46,7 @@ const AccountPage = () => {
 
   const handleSave = () => {
     setError(null);
-    updateAccount({ firstName, lastName, email, password, billingAddress: billing, homeAddress: home } as any);
+    updateAccount({ firstName, lastName, email, billingAddress: billing, homeAddress: home } as any);
   };
 
   const handleAddCard = () => {
@@ -82,7 +86,11 @@ const AccountPage = () => {
 
   return (
     <>
-        <NavBar />
+        <AccountNavbar />
+        
+        
+
+
         <section className="py-14 md:py-24 bg-[#0b1727] text-white min-h-screen">
         <div className="container px-4 mx-auto">
             <div className="grid grid-cols-12 justify-center mb-6 md:mb-12">
@@ -91,17 +99,18 @@ const AccountPage = () => {
             </div>
             </div>
 
+            
+            
             <div className="max-w-3xl mx-auto bg-[#17233a] p-6 rounded-xl border border-[#17233a]">
             {error && <div className="text-red-400 mb-4">{error}</div>}
+            
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="First name" className="px-4 py-2 rounded-md bg-[#0b1727] border border-gray-700 text-white" />
                 <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Last name" className="px-4 py-2 rounded-md bg-[#0b1727] border border-gray-700 text-white" />
             </div>
 
-            <div className="mt-4">
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" className="w-full px-4 py-2 rounded-md bg-[#0b1727] border border-gray-700 text-white" />
-            </div>
+            
 
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
