@@ -1,7 +1,8 @@
 package com.example.ces.model;
 
-import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,11 +36,12 @@ public class Customer extends User {
 
     // Backward-compatible constructor (with old fields)
     public Customer(String id, String name, String email, String password,
-                   String phone, String homeAddress, boolean isLoggedIn,
+                   String phone, Address homeAddress, boolean isLoggedIn,
                    List<PaymentCard> paymentCards, String shippingAddress,
                    boolean emailVerified, boolean isSubscribed) {
-        super(id, name, email, password, phone, homeAddress, isLoggedIn);
+        super(id, name, email, password, phone, isLoggedIn);
         setPaymentCards(paymentCards);
+        setHomeAddress(homeAddress);
         setShippingAddress(shippingAddress);
         setEmailVerified(emailVerified);
         setIsSubscribed(isSubscribed);
@@ -54,11 +56,12 @@ public class Customer extends User {
                    Address homeAddress, List<PaymentCard> paymentCards,
                    boolean isSubscribedToPromotions) {
         super(id, firstName, lastName, email, password, phone,
-              isLoggedIn, emailVerified, isActive, "USER");
+              isLoggedIn, emailVerified, isActive);
         setHomeAddress(homeAddress);
         setPaymentCards(paymentCards);
         setIsSubscribedToPromotions(isSubscribedToPromotions);
         setIsSubscribed(isSubscribedToPromotions);
+        setRole("USER");
     }
 
     // Constructor used for quick initialization of verification status

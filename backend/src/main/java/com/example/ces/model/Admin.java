@@ -9,11 +9,14 @@ public class Admin extends User {
     // Default constructor
     public Admin() {
         super();
+        setRole("ADMIN");
     }
 
     // Convenience constructor to create Admin with only id and password (only required fields)
     public Admin(String id, String password) {
-        // super(id, password);
+        this();
+        setId(id);
+        setPassword(password);
     }
 
     // Admin-specific methods
