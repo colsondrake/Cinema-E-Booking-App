@@ -20,7 +20,7 @@ public class EmailService {
     @Autowired
     private TemplateEngine templateEngine;
 
-    @Value("${spring.mail.username}")
+    @Value("${spring.mail.username:no-reply@localhost}")
     private String fromEmail;
 
     @Value("${app.base.url:http://localhost:8080}")
@@ -65,7 +65,9 @@ public class EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom(fromEmail);
+            // Fallback for missing/blank from address to avoid AddressException
+            String safeFrom = (fromEmail != null && !fromEmail.trim().isEmpty()) ? fromEmail.trim() : "no-reply@localhost";
+            helper.setFrom(safeFrom);
             helper.setTo(toEmail);
             helper.setSubject(subject);
 
@@ -75,7 +77,7 @@ public class EmailService {
 
             System.out.println("Email sent successfully to: " + toEmail);
         } catch (MessagingException e) {
-            System.err.println("Failed to send email to: " + toEmail);
+            System.err.println("Failed to send email to: " + toEmail + ". Reason: " + e.getMessage());
             throw new RuntimeException("Failed to send email", e);
         }
     }

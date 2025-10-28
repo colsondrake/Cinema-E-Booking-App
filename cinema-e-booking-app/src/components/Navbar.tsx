@@ -1,33 +1,64 @@
 'use client'
 
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faShoppingCart } from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAccount } from "@/context/AccountContext";
 
-const AuthNavMenu = () => (
-	<div className="flex items-center space-x-2">
-		<Link href="/shopping-cart">
-			<button className="bg-blue-600 text-white hover:bg-opacity-90 rounded-lg px-4 py-2 cursor-pointer">
-				<FontAwesomeIcon icon={faShoppingCart} />
-			</button>
-		</Link>
-		<Link href="/profile">
-			<button className="border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white py-1.5 px-4 rounded cursor-pointer">
-				Profile
-			</button>
-		</Link>
-		<Link href="/signup">
-			<button className="border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white py-1.5 px-4 rounded cursor-pointer">
-				Sign Up
-			</button>
-		</Link>
-		<Link href="/login">
-			<button className="border border-blue-600 bg-blue-600 text-white hover:bg-opacity-90 py-1.5 px-4 rounded ml-2 cursor-pointer">
-				Login
-			</button>
-		</Link>
-	</div>
-);
+const AuthNavMenu = () => {
+	const router = useRouter();
+	const { account, logout } = useAccount();
+
+	// Debug: log account so we can verify client state in the navbar
+	console.log("Navbar account:", account);
+
+	return (
+		<div className="flex items-center space-x-2">
+			<Link href="/">
+				<button className="border border-blue-600 bg-blue-600 text-white hover:bg-blue-500 py-1.5 px-4 rounded ml-2 cursor-pointer">
+					Home
+				</button>
+			</Link>
+			{account == null && (
+				<>
+				<Link href="/create-account">
+					<button className="border border-blue-600 bg-blue-600 text-white hover:bg-blue-500 py-1.5 px-4 rounded ml-2 cursor-pointer">
+						Create Account
+					</button>
+				</Link>
+				<Link href="/login">
+					<button className="border border-blue-600 bg-blue-600 text-white hover:bg-blue-500 py-1.5 px-4 rounded ml-2 cursor-pointer">
+						Login
+					</button>
+				</Link>
+				</>
+			)}
+			<Link href="/account">
+				<button className="border border-blue-600 bg-blue-600 text-white hover:bg-blue-500 py-1.5 px-4 rounded ml-2 cursor-pointer">
+					Account
+				</button>
+			</Link>
+
+			{/* Show Logout when an account is present */}
+			{account && (
+				<button
+					onClick={() => {
+						logout();
+						router.push('/');
+					}}
+					className="border border-blue-600 bg-blue-600 text-white hover:bg-blue-500 py-1.5 px-4 rounded ml-2 cursor-pointer"
+				>
+					Logout
+				</button>
+			)}
+
+			{/* Quick visual indicator for debugging: shows signed-in email when account exists */}
+			{account && (
+				<span className="text-xl text-gray-100 ml-2">Hello, {account.firstName}!</span>
+			)}
+
+		</div>
+	);
+};
 
 const Navbar = () => {
 	return (
