@@ -3,7 +3,7 @@ package com.example.ces.model;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 // Admin class extending User
-@Document(collection = "admins")
+@Document(collection = "users")
 public class Admin extends User {
 
     // Default constructor
