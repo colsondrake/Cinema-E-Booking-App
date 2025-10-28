@@ -17,8 +17,7 @@ const AccountPage = () => {
   const [email, setEmail] = useState(account?.email || "");
   const [password, setPassword] = useState(account?.password || "");
 
-  const [billing, setBilling] = useState(account?.billingAddress || { street: "", city: "", state: "", postalCode: "", country: "" });
-  const [home, setHome] = useState(account?.homeAddress || { street: "", city: "", state: "", postalCode: "", country: "" });
+  const [address, setAddress] = useState(account?.address || { street: "", city: "", state: "", postalCode: "", country: "" });
 
   const [cardHolder, setCardHolder] = useState("");
   const [cardNumber, setCardNumber] = useState("");
@@ -42,7 +41,7 @@ const AccountPage = () => {
 
   const handleSave = () => {
     setError(null);
-    updateAccount({ firstName, lastName, email, password, billingAddress: billing, homeAddress: home } as any);
+    updateAccount({ firstName, lastName, email, password, address: address } as any);
   };
 
   const handleAddCard = () => {
@@ -105,17 +104,10 @@ const AccountPage = () => {
 
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                <h4 className="mb-2">Billing Address</h4>
-                <input value={billing.street} onChange={e => setBilling({ ...billing, street: e.target.value })} placeholder="Street" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2" />
-                <input value={billing.city} onChange={e => setBilling({ ...billing, city: e.target.value })} placeholder="City" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2" />
-                <input value={billing.postalCode} onChange={e => setBilling({ ...billing, postalCode: e.target.value })} placeholder="Postal code" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white" />
-                </div>
-
-                <div>
-                <h4 className="mb-2">Home Address</h4>
-                <input value={home.street} onChange={e => setHome({ ...home, street: e.target.value })} placeholder="Street" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2" />
-                <input value={home.city} onChange={e => setHome({ ...home, city: e.target.value })} placeholder="City" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2" />
-                <input value={home.postalCode} onChange={e => setHome({ ...home, postalCode: e.target.value })} placeholder="Postal code" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white" />
+                <h4 className="mb-2">Address</h4>
+                <input value={address.street} onChange={e => setAddress({ ...address, street: e.target.value })} placeholder="Street" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2" />
+                <input value={address.city} onChange={e => setAddress({ ...address, city: e.target.value })} placeholder="City" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2" />
+                <input value={address.postalCode} onChange={e => setAddress({ ...address, postalCode: e.target.value })} placeholder="Postal code" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white" />
                 </div>
             </div>
 

@@ -25,8 +25,7 @@ export type Account = {
   email: string;
   password: string; // for demo only; do NOT store plaintext passwords in production
   paymentCards?: PaymentCard[];
-  billingAddress?: Address;
-  homeAddress?: Address;
+  address?: Address;
 };
 
 type AccountContextType = {
@@ -73,13 +72,13 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         // only include phone if present
         phone: (acc as any).phone || undefined,
         // map postalCode -> zipCode to match backend Address model
-        homeAddress: acc.homeAddress
+        address: acc.address
           ? {
-              street: acc.homeAddress.street,
-              city: acc.homeAddress.city,
-              state: acc.homeAddress.state,
-              zipCode: (acc.homeAddress as any).postalCode || (acc.homeAddress as any).zipCode || "",
-              country: acc.homeAddress.country || undefined,
+              street: acc.address.street,
+              city: acc.address.city,
+              state: acc.address.state,
+              zipCode: (acc.address as any).postalCode || (acc.address as any).zipCode || "",
+              country: acc.address.country || undefined,
             }
           : undefined,
         subscribeToPromotions: false,
@@ -123,8 +122,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
             email: json.email || acc.email,
             password: acc.password,
             paymentCards: acc.paymentCards || [],
-            billingAddress: acc.billingAddress,
-            homeAddress: json.homeAddress || acc.homeAddress,
+            address: json.address || acc.address,
           } as Account;
         }
       } catch (e) {
@@ -202,7 +200,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         expiry: c.expiryDate || c.expiry || "",
       }));
 
-      const backendAddress = json.homeAddress || json.home_address || null;
+      const backendAddress = json.address || json.home_address || null;
       const mappedAddress: Address | undefined = backendAddress
         ? {
             street: backendAddress.street || backendAddress.addressLine || "",
@@ -219,7 +217,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         email: json.email || email,
         password: password, // demo only
         paymentCards: mappedCards,
-        homeAddress: mappedAddress,
+        address: mappedAddress,
       };
 
       // Persist masked cards and account to sessionStorage
