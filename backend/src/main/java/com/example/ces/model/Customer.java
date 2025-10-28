@@ -30,45 +30,14 @@ public class Customer extends User {
     }
 
     public Customer(String id) {
-        super(id);
-        setRole("USER");
-    }
-
-    // Backward-compatible constructor (with old fields)
-    public Customer(String id, String name, String email, String password,
-                   String phone, Address homeAddress, boolean isLoggedIn,
-                   List<PaymentCard> paymentCards, String shippingAddress,
-                   boolean emailVerified, boolean isSubscribed) {
-        super(id, name, email, password, phone, isLoggedIn);
-        setPaymentCards(paymentCards);
-        setHomeAddress(homeAddress);
-        setShippingAddress(shippingAddress);
-        setEmailVerified(emailVerified);
-        setIsSubscribed(isSubscribed);
-        setIsSubscribedToPromotions(isSubscribed);
-        setRole("USER");
-    }
-
-    // Modern constructor (used internally by service)
-    public Customer(String id, String firstName, String lastName, String email,
-                   String password, String phone, boolean isLoggedIn,
-                   boolean emailVerified, boolean isActive,
-                   Address homeAddress, List<PaymentCard> paymentCards,
-                   boolean isSubscribedToPromotions) {
-        super(id, firstName, lastName, email, password, phone,
-              isLoggedIn, emailVerified, isActive);
-        setHomeAddress(homeAddress);
-        setPaymentCards(paymentCards);
-        setIsSubscribedToPromotions(isSubscribedToPromotions);
-        setIsSubscribed(isSubscribedToPromotions);
-        setRole("USER");
+        this();
+        setId(id);
     }
 
     // Constructor used for quick initialization of verification status
     public Customer(boolean emailVerified) {
-        super();
+        this();
         setEmailVerified(emailVerified);
-        setRole("USER");
     }
 
     // ---------------- Address Handling ----------------
