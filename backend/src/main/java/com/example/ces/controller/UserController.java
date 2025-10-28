@@ -2,7 +2,6 @@ package com.example.ces.controller;
 
 import com.example.ces.model.PaymentCard;
 import com.example.ces.model.User;
-import com.example.ces.model.Customer;
 import com.example.ces.service.UserService;
 import com.example.ces.service.EmailService;
 import com.example.ces.model.VerificationToken;
@@ -50,11 +49,10 @@ public class UserController {
                 response.put("phone", user.getPhone());
                 response.put("emailVerified", user.isEmailVerified());
                 response.put("isActive", user.isActive());
-                if (user instanceof Customer customer) {
-                    response.put("homeAddress", customer.getHomeAddress());
-                    response.put("paymentCards", customer.getPaymentCards());
-                    response.put("subscribeToPromotions", customer.isSubscribedToPromotions());
-                }
+                response.put("homeAddress", user.getHomeAddress());
+                response.put("paymentCards", user.getPaymentCards());
+                response.put("subscribeToPromotions", user.isSubscribedToPromotions());
+
                 return ResponseEntity.ok(response);
             })
             .orElse(ResponseEntity.notFound().build());
@@ -91,12 +89,9 @@ public class UserController {
                 response.put("phone", user.getPhone());
                 response.put("emailVerified", user.isEmailVerified());
                 response.put("isActive", user.isActive());
-                // If this is a Customer, include customer-specific fields
-                if (user instanceof Customer customer) {
-                    response.put("homeAddress", customer.getHomeAddress());
-                    response.put("paymentCards", customer.getPaymentCards());
-                    response.put("subscribeToPromotions", customer.isSubscribedToPromotions());
-                }
+                response.put("homeAddress", user.getHomeAddress());
+                response.put("paymentCards", user.getPaymentCards());
+                response.put("subscribeToPromotions", user.isSubscribedToPromotions());
 
                 // Return full account details (excluding stored password)
                 return ResponseEntity.ok(response);
@@ -213,10 +208,7 @@ public class UserController {
     public ResponseEntity<?> getPaymentCards(@PathVariable String id) {
         return userService.getUserById(id)
             .map(user -> {
-                if (user instanceof Customer customer) {
-                    return ResponseEntity.ok(customer.getPaymentCards());
-                }
-                return ResponseEntity.ok(Map.of("cards", new Object[0]));
+                return ResponseEntity.ok(user.getPaymentCards());
             })
             .orElse(ResponseEntity.notFound().build());
     }

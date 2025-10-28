@@ -57,21 +57,16 @@ public class UserService {
             profileChanged = true;
         }
 
-        // Update address if this is a Customer
-        if (user instanceof Customer) {
-            Customer Customer = (Customer) user;
-            
-            // Update home address (only 1 allowed)
-            if (profileDTO.getHomeAddress() != null) {
-                Customer.setHomeAddress(profileDTO.getHomeAddress());
-                profileChanged = true;
-            }
+        // Update home address (only 1 allowed)
+        if (profileDTO.getHomeAddress() != null) {
+            user.setHomeAddress(profileDTO.getHomeAddress());
+            profileChanged = true;
+        }
 
-            // Update subscription preference
-            if (profileDTO.isSubscribeToPromotions() != Customer.isSubscribedToPromotions()) {
-                Customer.setIsSubscribedToPromotions(profileDTO.isSubscribeToPromotions());
-                profileChanged = true;
-            }
+        // Update subscription preference
+        if (profileDTO.isSubscribeToPromotions() != user.isSubscribedToPromotions()) {
+            user.setIsSubscribedToPromotions(profileDTO.isSubscribeToPromotions());
+            profileChanged = true;
         }
 
         // Update password if provided
@@ -97,28 +92,22 @@ public class UserService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if (!(user instanceof Customer)) {
-            throw new IllegalArgumentException("Only web users can have payment cards");
-        }
-
-        Customer customer = (Customer) user;
-
         // Check if user already has 3 cards
-        if (customer.getPaymentCards() != null && customer.getPaymentCards().size() >= 3) {
+        if (user.getPaymentCards() != null && user.getPaymentCards().size() >= 3) {
             throw new IllegalArgumentException("Maximum 3 payment cards allowed");
         }
 
         // Set user ID for the card
         card.setUserId(userId);
-        
+
         // Generate a temporary ID if not present
         if (card.getId() == null) {
             card.setId(UUID.randomUUID().toString());
         }
 
         // Add to user's cards
-        customer.addPaymentCard(card);
-        userRepository.save(customer);
+        user.addPaymentCard(card);
+        userRepository.save(user);
 
         return card;
     }
@@ -131,7 +120,8 @@ public class UserService {
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         // For now, simple password check (in production, use PasswordEncoder)
-        if (!user.getPassword().equals(currentPassword)) {
+        String existing = user.getPassword();
+        if (existing == null || !existing.equals(currentPassword)) {
             throw new IllegalArgumentException("Current password is incorrect");
         }
 
@@ -141,7 +131,7 @@ public class UserService {
     }
 
     /**
-     * Register a new user (Customer)
+     * Register a new user (user)
      */
     public User register(com.example.ces.dto.UserRegistrationDTO dto) {
         if (dto == null) throw new IllegalArgumentException("Missing registration data");
@@ -152,19 +142,19 @@ public class UserService {
             throw new IllegalArgumentException("Email already registered");
         }
 
-        Customer customer = new Customer();
-        customer.setFirstName(dto.getFirstName());
-        customer.setLastName(dto.getLastName());
-        customer.setEmail(dto.getEmail());
+        User user = new User();
+        user.setFirstName(dto.getFirstName());
+        user.setLastName(dto.getLastName());
+        user.setEmail(dto.getEmail());
         // NOTE: In production, passwords must be hashed using a PasswordEncoder
-        customer.setPassword(dto.getPassword());
-        customer.setPhone(dto.getPhone());
-        customer.setIsActive(false); // require email verification flow
-        customer.setIsSubscribedToPromotions(dto.isSubscribeToPromotions());
+        user.setPassword(dto.getPassword());
+        user.setPhone(dto.getPhone());
+        user.setIsActive(false); // require email verification flow
+        user.setIsSubscribedToPromotions(dto.isSubscribeToPromotions());
         if (dto.getHomeAddress() != null) {
-            customer.setHomeAddress(dto.getHomeAddress());
+            user.setHomeAddress(dto.getHomeAddress());
         }
 
-        return userRepository.save(customer);
+        return userRepository.save(user);
     }
 }
