@@ -9,6 +9,16 @@ import React, { useEffect, useState } from "react";
 /**
  * Movie interface defines the structure of a movie object
  */
+interface Showtime {
+  showtimeId: string;
+  movieId: string;
+  date: string; // e.g. 2025-10-28
+  basePrice: number;
+  time: string; // e.g. 19:30
+  seats: number;
+  remainingSeats: number;
+}
+
 interface Movie {
   id: string;
   title: string;
@@ -19,7 +29,8 @@ interface Movie {
   description: string;
   posterUrl: string;
   trailerUrl?: string;
-  showtimes: string[];
+  // Backend may return showtimes as strings or as objects; support both for safety
+  showtimes: Array<string | Showtime>;
 }
 
 
@@ -32,6 +43,13 @@ const MovieDetails = () => {
   const [movie, setMovie] = useState<Movie | null>(null);
   // State to manage loading status
   const [loading, setLoading] = useState(true);
+
+  // Format a showtime object into a user-friendly label
+  const formatShowtime = (st: Showtime) => {
+    // Robust formatting: join only defined parts, avoid rendering 'undefined' or blanks
+    const parts = [st.date, st.time].filter(Boolean);
+    return parts.join(" ");
+  };
 
   useEffect(() => {
     /**
@@ -126,22 +144,51 @@ const MovieDetails = () => {
             <div className="mb-2 text-center">
               <span className="font-semibold">Showtimes: </span>
               <div className="flex flex-wrap gap-4 justify-center mt-3">
-                {movie.showtimes.map((showtime, idx) => (
-                  <button
-                    key={idx}
-                    className="px-6 py-3 rounded-lg bg-blue-500 text-white text-lg font-semibold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer transition-all duration-150"
-                    onClick={() => {
-                      // Store selected movie and showtime in sessionStorage and navigate to booking page
-                      if (typeof window !== "undefined") {
-                        sessionStorage.setItem("selectedMovieId", movie.id);
-                        sessionStorage.setItem("selectedShowtime", showtime);
-                      }
-                      window.location.href = "/booking";
-                    }}
-                  >
-                    {showtime}
-                  </button>
-                ))}
+                {movie.showtimes
+                  .filter((st) => st != null) // drop null/undefined entries to avoid rendering 'null'
+                  .map((showtime, idx) => {
+                    if (typeof showtime === "string") {
+                      const label = showtime.trim();
+                      if (!label) return null; // skip empty strings
+                      const key = `st-${idx}-${label}`;
+                      return (
+                        <button
+                          key={key}
+                          className="px-6 py-3 rounded-lg bg-blue-500 text-white text-lg font-semibold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer transition-all duration-150"
+                          onClick={() => {
+                            if (typeof window !== "undefined") {
+                              sessionStorage.setItem("selectedMovieId", movie.id);
+                              sessionStorage.setItem("selectedShowtime", label);
+                            }
+                            window.location.href = "/booking";
+                          }}
+                        >
+                          {label}
+                        </button>
+                      );
+                    } else if (typeof showtime === "object") {
+                      const stObj = showtime as Showtime;
+                      const label = formatShowtime(stObj);
+                      if (!label) return null; // skip if label can't be formed
+                      const key = stObj.showtimeId || `st-${idx}-${label}`;
+                      return (
+                        <button
+                          key={key}
+                          className="px-6 py-3 rounded-lg bg-blue-500 text-white text-lg font-semibold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer transition-all duration-150"
+                          onClick={() => {
+                            if (typeof window !== "undefined") {
+                              sessionStorage.setItem("selectedMovieId", movie.id);
+                              sessionStorage.setItem("selectedShowtime", label);
+                            }
+                            window.location.href = "/booking";
+                          }}
+                        >
+                          {label}
+                        </button>
+                      );
+                    }
+                    return null;
+                  })}
               </div>
             </div>
           </div>
