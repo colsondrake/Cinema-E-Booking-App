@@ -1,34 +1,3 @@
-// package com.example.ces.service;
-
-// import java.util.Optional;
-
-// import org.springframework.beans.factory.annotation.Autowired;
-// import org.springframework.stereotype.Service;
-
-// import com.example.ces.model.User;
-// import com.example.ces.repository.UserRepository;
-
-// @Service
-// public class UserService {
-
-//     private final UserRepository userRepository;
-
-//     @Autowired
-//     public UserService(UserRepository userRepository) {
-//         this.userRepository = userRepository;
-//     }
-
-//     /**
-//      * Retrieve a user by id.
-//      *
-//      * @param id user id
-//      * @return Optional<User> present if found
-//      */
-//     public Optional<User> getUserById(String id) {
-//         return userRepository.findById(id);
-//     }
-// }
-
 package com.example.ces.service;
 
 import com.example.ces.model.*;
@@ -52,6 +21,13 @@ public class UserService {
      */
     public Optional<User> getUserById(String id) {
         return userRepository.findById(id);
+    }
+
+    /**
+     * Get user by email (used for login)
+     */
+    public Optional<User> getUserByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
     /**
@@ -162,5 +138,33 @@ public class UserService {
         // Update password (in production, encrypt it)
         user.setPassword(newPassword);
         userRepository.save(user);
+    }
+
+    /**
+     * Register a new user (Customer)
+     */
+    public User register(com.example.ces.dto.UserRegistrationDTO dto) {
+        if (dto == null) throw new IllegalArgumentException("Missing registration data");
+        if (!dto.isPasswordMatching()) throw new IllegalArgumentException("Passwords do not match");
+        if (dto.getEmail() == null || dto.getEmail().isBlank()) throw new IllegalArgumentException("Email is required");
+
+        if (userRepository.existsByEmail(dto.getEmail())) {
+            throw new IllegalArgumentException("Email already registered");
+        }
+
+        Customer customer = new Customer();
+        customer.setFirstName(dto.getFirstName());
+        customer.setLastName(dto.getLastName());
+        customer.setEmail(dto.getEmail());
+        // NOTE: In production, passwords must be hashed using a PasswordEncoder
+        customer.setPassword(dto.getPassword());
+        customer.setPhone(dto.getPhone());
+        customer.setIsActive(false); // require email verification flow
+        customer.setIsSubscribedToPromotions(dto.isSubscribeToPromotions());
+        if (dto.getHomeAddress() != null) {
+            customer.setHomeAddress(dto.getHomeAddress());
+        }
+
+        return userRepository.save(customer);
     }
 }

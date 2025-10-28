@@ -9,6 +9,15 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+type Showtime = {
+  showtimeId?: string;
+  movieId?: string;
+  date?: string;
+  basePrice?: number;
+  time?: string;
+  seats?: any;
+  remainingSeats?: number;
+}
 
 // Movie type definition for type safety and clarity
 type Movie = {
@@ -21,7 +30,7 @@ type Movie = {
   description: string;
   posterUrl: string;
   trailerUrl: string;
-  showtimes: string[];
+  showtimes: Array<Showtime>;
   status: string;
 };
 
@@ -168,15 +177,21 @@ const Movies = () => {
               <span className="font-semibold text-sm text-blue-300">Showtimes:</span>
               <div className="flex flex-wrap gap-2 mt-1 justify-center">
                 {movie.showtimes && movie.showtimes.length > 0 ? (
-                  movie.showtimes.map((showtime: string, idx: number) => (
-                    <button
-                      key={idx}
-                      className="px-2 py-1 bg-blue-900 text-blue-200 rounded text-xs"
-                      disabled={showtime === "Coming Soon"}
-                    >
-                      {showtime}
-                    </button>
-                  ))
+                  movie.showtimes.map((showtime, idx: number) => {
+                    // showtime may be a string (legacy) or an object from backend
+                    const display = typeof showtime === 'string'
+                      ? showtime
+                      : (showtime.time ?? showtime.date ?? JSON.stringify(showtime));
+                    return (
+                      <button
+                        key={idx}
+                        className="px-2 py-1 bg-blue-900 text-blue-200 rounded text-xs"
+                        disabled={display === "Coming Soon"}
+                      >
+                        {display}
+                      </button>
+                    );
+                  })
                 ) : (
                   <span className="text-xs text-gray-400">No showtimes available</span>
                 )}

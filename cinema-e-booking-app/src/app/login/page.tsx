@@ -13,12 +13,12 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const validateEmail = (e: string) => /^\S+@\S+\.\S+$/.test(e);
+  const validateEmailFormat = (e: string) => /^\S+@\S+\.\S+$/.test(e);
 
   const handleLogin = (ev?: React.FormEvent) => {
     ev?.preventDefault();
     setError(null);
-    if (!validateEmail(email)) {
+    if (!validateEmailFormat(email)) {
       setError("Enter a valid email address.");
       return;
     }
@@ -27,12 +27,14 @@ const LoginPage = () => {
       return;
     }
 
-    const ok = login(email, password);
-    if (ok) {
-      router.push("/");
-    } else {
-      setError("Invalid email or password (this demo checks stored account only).");
-    }
+    (async () => {
+      try {
+        await login(email, password);
+        router.push("/");
+      } catch (e: any) {
+        setError(e.message);
+      }
+    })();
   };
 
   return (
