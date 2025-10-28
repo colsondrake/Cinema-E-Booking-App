@@ -3,7 +3,7 @@ package com.example.ces.controller;
 import com.example.ces.dto.UserProfileDTO;
 import com.example.ces.model.Address;
 import com.example.ces.model.PaymentCard;
-import com.example.ces.model.Customer;
+import com.example.ces.model.User;
 import com.example.ces.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -37,7 +37,7 @@ public class UserControllerTest {
     // ✅ Test GET user by ID
     @Test
     public void testGetUserById() throws Exception {
-        Customer user = new Customer(
+        User user = new User(
                 UUID.randomUUID().toString(),
                 "Tasnuva",
                 "Tabassum",
@@ -74,7 +74,7 @@ public class UserControllerTest {
         profileDTO.setSubscribeToPromotions(true);
 
         // Mock returned user object
-        Customer updatedUser = new Customer();
+        User updatedUser = new User();
         updatedUser.setId(userId);
         updatedUser.setFirstName("Tasnuva");
         updatedUser.setLastName("Updated");
