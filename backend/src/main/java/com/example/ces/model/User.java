@@ -3,15 +3,24 @@ package com.example.ces.model;
 import org.springframework.data.annotation.Id;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
-
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 
-// Abstract User class that Customer and Admin will extend
-public abstract class User {
-    // Define data members
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * User is now a concrete class. Role differentiates between normal users and admins.
+ * Customer-specific functionality (address, payment cards, subscriptions) was migrated here
+ * so existing code that relied on Customer can continue to work if Customer continues to extend User.
+ */
+@Document(collection = "users")
+public class User {
+    // Data members
     @Id
     private String id;
-    private String firstName;  // Changed from 'name' to split into firstName/lastName
+    private String firstName;
     private String lastName;
     private String email;
     private String phone;
@@ -29,11 +38,21 @@ public abstract class User {
     private String verificationToken;
     private LocalDateTime tokenExpiryDate;
 
+    // --- Customer-specific fields to use when role is USER ---
+    private Address homeAddress; // Users can have only 1 home address
+    private String shippingAddress; // For backward compatibility
+    @DBRef
+    private List<PaymentCard> paymentCards = new ArrayList<>(); // Max 3 cards per user
+    private boolean isSubscribedToPromotions = false; // Current flag
+
+    // ---------------- Constructors ----------------
+
     // Default constructor
     public User() {
         this.createdAt = LocalDateTime.now();
         this.lastModified = LocalDateTime.now();
-
+        // default role is USER; Admin subclass can override to "ADMIN"
+        setRole("USER");
     }
 
     // Convenience constructor with id
@@ -42,31 +61,11 @@ public abstract class User {
         setId(id);
     }
 
-    // Updated convenience constructor for backward compatibility
-    public User(String id, String name, String email, String password,
-            String phone, boolean isLoggedIn) {
-        this();
-        setId(id);
-        // Split name into first and last (for backward compatibility)
-        if (name != null && name.contains(" ")) {
-            String[] parts = name.split(" ", 2);
-            setFirstName(parts[0]);
-            setLastName(parts.length > 1 ? parts[1] : "");
-        } else {
-            setFirstName(name);
-            setLastName("");
-        }
-        setEmail(email);
-        setPassword(password);
-        setPhone(phone);
-        setIsLoggedIn(isLoggedIn);
-
-    }
-
     // New full constructor
-    public User(String id, String firstName, String lastName, String email, 
-                String password, String phone, boolean isLoggedIn, 
-                boolean emailVerified, boolean isActive) {
+    public User(String id, String firstName, String lastName, String email,
+                String password, String phone, boolean isLoggedIn,
+                boolean emailVerified, boolean isActive, Address homeAddress,
+                List<PaymentCard> paymentCards, boolean isSubscribedToPromotions) {
         this();
         setId(id);
         setFirstName(firstName);
@@ -79,14 +78,24 @@ public abstract class User {
         setIsActive(isActive);
     }
 
-    // Constructor for admins
+    // Constructor for admins (minimal)
     public User(String id, String password) {
+        this();
+        setRole("ADMIN");
         setId(id);
         setPassword(password);
     }
 
+    // Constructor for email verification
+    public User(String email, String verificationToken, LocalDateTime tokenExpiryDate) {
+        this();
+        setEmail(email);
+        setVerificationToken(verificationToken);
+        setTokenExpiryDate(tokenExpiryDate);
+    }
 
-    // Getters and setters
+    // ---------------- Getters / Setters (core) ----------------
+
     public String getId() {
         return id;
     }
@@ -113,7 +122,7 @@ public abstract class User {
         this.lastModified = LocalDateTime.now();
     }
 
-    // Keep getName() for backward compatibility
+    // getName() for combining first and last names
     public String getName() {
         if (firstName != null && lastName != null) {
             return firstName + " " + lastName;
@@ -133,6 +142,9 @@ public abstract class User {
     }
 
     public String getFullName() {
+        if (firstName == null && lastName == null) return "";
+        if (firstName == null) return lastName;
+        if (lastName == null) return firstName;
         return firstName + " " + lastName;
     }
 
@@ -160,16 +172,6 @@ public abstract class User {
     public void setPhone(String phone) {
         this.phone = phone;
         this.lastModified = LocalDateTime.now();
-    }
-
-    // Keep old method name for backward compatibility
-    public String getHomeAddress() {
-        // This is now handled in WebUser with proper Address object
-        return null;
-    }
-
-    public void setHomeAddress(String homeAddress) {
-        // This is now handled in WebUser with proper Address object
     }
 
     public boolean getIsLoggedIn() {
@@ -234,5 +236,96 @@ public abstract class User {
 
     public void setTokenExpiryDate(LocalDateTime tokenExpiryDate) {
         this.tokenExpiryDate = tokenExpiryDate;
+    }
+
+    // ---------------- Home Address ----------------
+
+    /**
+     * Returns a string representation of the user's home address.
+     * If a full Address object exists, returns its full address string,
+     * otherwise falls back to the legacy shippingAddress string.
+     */
+    public String getHomeAddress() {
+        if (homeAddress != null) {
+            return homeAddress.getFullAddress();
+        }
+        return shippingAddress;
+    }
+
+    public Address getHomeAddressObj() {
+        return homeAddress;
+    }
+
+    public void setHomeAddress(Address homeAddress) {
+        this.homeAddress = homeAddress;
+    }
+
+    /**
+     * Legacy setter that accepts a single-line address string and keeps
+     * it in shippingAddress (legacy) and populates a simple Address object.
+     */
+    public void setHomeAddress(String homeAddressStr) {
+        if (homeAddressStr != null && !homeAddressStr.isEmpty()) {
+            Address addr = new Address();
+            addr.setStreet(homeAddressStr);
+            this.homeAddress = addr;
+        }
+        this.shippingAddress = homeAddressStr;
+    }
+
+    public String getShippingAddress() {
+        return shippingAddress;
+    }
+
+    public void setShippingAddress(String shippingAddress) {
+        this.shippingAddress = shippingAddress;
+    }
+
+    // ---------------- Payment cards ----------------
+
+    public List<PaymentCard> getPaymentCards() {
+        return paymentCards;
+    }
+
+    public void setPaymentCards(List<PaymentCard> paymentCards) {
+        if (paymentCards != null && paymentCards.size() > 3) {
+            throw new IllegalArgumentException("A user can have a maximum of 3 payment cards.");
+        }
+        this.paymentCards = (paymentCards != null) ? paymentCards : new ArrayList<>();
+    }
+
+    public void addPaymentCard(PaymentCard card) {
+        if (this.paymentCards == null) {
+            this.paymentCards = new ArrayList<>();
+        }
+        if (this.paymentCards.size() >= 3) {
+            throw new IllegalArgumentException("A user can have a maximum of 3 payment cards.");
+        }
+        this.paymentCards.add(card);
+    }
+
+    public void removePaymentCard(String cardId) {
+        if (this.paymentCards != null) {
+            this.paymentCards.removeIf(card -> card.getId().equals(cardId));
+        }
+    }
+
+    // ---------------- Subscription handling ----------------
+
+    public boolean isSubscribedToPromotions() {
+        return isSubscribedToPromotions;
+    }
+
+    public void setIsSubscribedToPromotions(boolean isSubscribed) {
+        
+        this.isSubscribedToPromotions = isSubscribedToPromotions;
+    }
+
+    // ---------------- Utility ----------------
+
+    @Override
+    public String toString() {
+        return String.format("User{id='%s', name='%s', email='%s', verified=%s, subscribed=%s, role=%s}",
+                getId(), getFullName(), getEmail(), isEmailVerified(), isSubscribedToPromotions(), getRole());
     }
 }
