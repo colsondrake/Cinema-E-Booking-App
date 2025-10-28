@@ -3,9 +3,10 @@ package com.example.ces.model;
 import org.springframework.data.annotation.Id;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
+
 import org.springframework.data.mongodb.core.mapping.Field;
 
-// Abstract User class that WebUser and Admin will extend
+// Abstract User class that Customer and Admin will extend
 public abstract class User {
     // Define data members
     @Id
@@ -14,6 +15,7 @@ public abstract class User {
     private String lastName;
     private String email;
     private String phone;
+
     @JsonIgnore // Don't send password in JSON responses
     private String password;
     private boolean isLoggedIn = false;
@@ -31,6 +33,7 @@ public abstract class User {
     public User() {
         this.createdAt = LocalDateTime.now();
         this.lastModified = LocalDateTime.now();
+
     }
 
     // Convenience constructor with id
@@ -41,7 +44,7 @@ public abstract class User {
 
     // Updated convenience constructor for backward compatibility
     public User(String id, String name, String email, String password,
-            String phone, String homeAddress, boolean isLoggedIn) {
+            String phone, boolean isLoggedIn) {
         this();
         setId(id);
         // Split name into first and last (for backward compatibility)
@@ -57,12 +60,13 @@ public abstract class User {
         setPassword(password);
         setPhone(phone);
         setIsLoggedIn(isLoggedIn);
+
     }
 
     // New full constructor
     public User(String id, String firstName, String lastName, String email, 
                 String password, String phone, boolean isLoggedIn, 
-                boolean emailVerified, boolean isActive, String role) {
+                boolean emailVerified, boolean isActive) {
         this();
         setId(id);
         setFirstName(firstName);
@@ -73,8 +77,14 @@ public abstract class User {
         setIsLoggedIn(isLoggedIn);
         setEmailVerified(emailVerified);
         setIsActive(isActive);
-        setRole(role);
     }
+
+    // Constructor for admins
+    public User(String id, String password) {
+        setId(id);
+        setPassword(password);
+    }
+
 
     // Getters and setters
     public String getId() {
