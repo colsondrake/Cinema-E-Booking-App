@@ -15,7 +15,18 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+    //private final VerificationTokenRepository verificationTokenRepository;
+    //private final EmailService emailService;
 
+    /* 
+    public UserService(UserRepository userRepository,
+                       VerificationTokenRepository verificationTokenRepository,
+                       EmailService emailService) {
+        this.userRepository = userRepository;
+        this.verificationTokenRepository = verificationTokenRepository;
+        this.emailService = emailService;
+    }
+    */
     /**
      * Get user by ID
      */
@@ -166,5 +177,15 @@ public class UserService {
         }
 
         return userRepository.save(customer);
+
+        //String token = java.util.UUID.randomUUID().toString();
+        //VerificationToken vt = new VerificationToken(token, saved);
+        //verificationTokenRepository.save(vt);
+
+        //emailService.sendRegistrationConfirmationEmail(saved.getEmail(), saved.getFirstName(), token);
+
+        //return saved;
+
+        
     }
 }

@@ -112,26 +112,30 @@ public class UserController {
             // Create and persist a VerificationToken tied to the newly created user,
             // then send the registration confirmation email with that token.
             String confirmationToken = UUID.randomUUID().toString();
+            
+            // Always create the token - this must succeed
+            System.out.println("Creating verification token for user: " + created.getEmail());
+            VerificationToken vt = new VerificationToken(confirmationToken, created);
+            verificationTokenRepository.save(vt);
+            System.out.println("Verification token saved successfully for user: " + created.getEmail());
+
+            // Optionally store token on the user document for quick reference
             try {
-                VerificationToken vt = new VerificationToken(confirmationToken, created);
-                verificationTokenRepository.save(vt);
-
-                // Optionally store token on the user document for quick reference
-                try {
-                    created.setVerificationToken(confirmationToken);
-                    created.setTokenExpiryDate(vt.getExpiresAt());
-                    // userService.register already saved the user; update save via userService if available.
-                    // We attempt to update by calling userService.updateUserProfile as a lightweight save if present,
-                    // otherwise the VerificationToken DBRef is sufficient for verification flows.
-                    // (Avoid introducing new service methods in this quick change.)
-                } catch (Exception ignored) {
-                    // ignore failures to set fields on returned object
-                }
-
-                emailService.sendRegistrationConfirmationEmail(created.getEmail(), created.getFirstName(), confirmationToken);
+                created.setVerificationToken(confirmationToken);
+                created.setTokenExpiryDate(vt.getExpiresAt());
             } catch (Exception e) {
-                // Don't fail registration if token persistence or email sending fails; log for debugging
-                System.err.println("Failed to create/send verification token: " + e.getMessage());
+                System.out.println("Warning: Could not store token on user object: " + e.getMessage());
+            }
+
+            // Try to send email - if this fails, the token still exists in DB and user can use the link
+            try {
+                emailService.sendRegistrationConfirmationEmail(created.getEmail(), created.getFirstName(), confirmationToken);
+                System.out.println("Verification email sent successfully to: " + created.getEmail());
+            } catch (Exception e) {
+                // Don't fail registration if email sending fails
+                System.err.println("Warning: Could not send verification email to: " + created.getEmail());
+                System.err.println("Reason: " + e.getMessage());
+                System.err.println("However, the verification token has been saved. You can manually verify the user.");
             }
             Map<String, Object> resp = new HashMap<>();
             resp.put("id", created.getId());
