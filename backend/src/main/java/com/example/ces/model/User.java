@@ -43,7 +43,6 @@ public class User {
     private String shippingAddress; // For backward compatibility
     @DBRef
     private List<PaymentCard> paymentCards = new ArrayList<>(); // Max 3 cards per user
-    private boolean isSubscribed = false; // Backward compatibility
     private boolean isSubscribedToPromotions = false; // Current flag
 
     // ---------------- Constructors ----------------
@@ -63,12 +62,14 @@ public class User {
     }
 
     // New full constructor
-    public User(String id, String name, String email,
+    public User(String id, String firstName, String lastName, String email,
                 String password, String phone, boolean isLoggedIn,
-                boolean emailVerified, boolean isActive) {
+                boolean emailVerified, boolean isActive, Address homeAddress,
+                List<PaymentCard> paymentCards, boolean isSubscribedToPromotions) {
         this();
         setId(id);
-        setName(name);
+        setFirstName(firstName);
+        setLastName(lastName);
         setEmail(email);
         setPassword(password);
         setPhone(phone);
@@ -311,22 +312,13 @@ public class User {
 
     // ---------------- Subscription handling ----------------
 
-    public boolean isSubscribed() {
-        return isSubscribed || isSubscribedToPromotions;
-    }
-
-    public void setIsSubscribed(boolean isSubscribed) {
-        this.isSubscribed = isSubscribed;
-        this.isSubscribedToPromotions = isSubscribed;
-    }
-
     public boolean isSubscribedToPromotions() {
-        return isSubscribedToPromotions || isSubscribed;
+        return isSubscribedToPromotions;
     }
 
-    public void setIsSubscribedToPromotions(boolean isSubscribedToPromotions) {
+    public void setIsSubscribedToPromotions(boolean isSubscribed) {
+        
         this.isSubscribedToPromotions = isSubscribedToPromotions;
-        this.isSubscribed = isSubscribedToPromotions;
     }
 
     // ---------------- Utility ----------------
