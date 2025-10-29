@@ -20,7 +20,7 @@ public class UserService {
     private UserRepository userRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder; // ✅ inject BCryptPasswordEncoder
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     private AESEncryptionService encryptionService;
@@ -125,7 +125,7 @@ public class UserService {
             if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
                 throw new IllegalArgumentException("Current password is incorrect");
             }
-            user.setPassword(passwordEncoder.encode(profileDTO.getNewPassword())); // ✅ hash new password
+            user.setPassword(passwordEncoder.encode(profileDTO.getNewPassword())); 
             profileChanged = true;
         }
 
@@ -199,7 +199,7 @@ public class UserService {
             throw new IllegalArgumentException("Current password is incorrect");
         }
 
-        user.setPassword(passwordEncoder.encode(newPassword)); // ✅ hashed
+        user.setPassword(passwordEncoder.encode(newPassword));  
         userRepository.save(user);
     }
 
@@ -222,7 +222,7 @@ public class UserService {
         user.setFirstName(dto.getFirstName());
         user.setLastName(dto.getLastName());
         user.setEmail(dto.getEmail());
-        user.setPassword(passwordEncoder.encode(dto.getPassword())); // ✅ hash before save
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setPhone(dto.getPhone());
         user.setIsActive(false); // require email verification flow
         user.setEmailVerified(false);
@@ -233,5 +233,15 @@ public class UserService {
         }
 
         return userRepository.save(user);
+    }
+
+    public boolean emailExists(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    public boolean isEmailVerified(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return user.isEmailVerified();
     }
 }
