@@ -313,4 +313,26 @@ public class UserController {
         return callerId.equals(targetUserId);
     }
 
+
+    @PostMapping("/change-password-by-email")
+    public ResponseEntity<?> changePasswordByEmail(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        String currentPassword = body.get("currentPassword");
+        String newPassword = body.get("newPassword");
+
+        try {
+            String userId = userService.getUserByEmail(email)
+                .map(User::getId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+            userService.changePassword(userId, currentPassword, newPassword);
+            return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Unexpected error occurred"));
+        }
+    }
+
+
 }
