@@ -150,6 +150,7 @@ public class UserService {
         user.setPassword(dto.getPassword());
         user.setPhone(dto.getPhone());
         user.setIsActive(false); // require email verification flow
+        user.setEmailVerified(false);
         user.setIsSubscribedToPromotions(dto.isSubscribeToPromotions());
         if (dto.getHomeAddress() != null) {
             user.setHomeAddress(dto.getHomeAddress());

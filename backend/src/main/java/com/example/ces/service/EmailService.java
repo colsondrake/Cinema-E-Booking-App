@@ -37,7 +37,8 @@ public class EmailService {
     /** Registration Confirmation Email */
     public void sendRegistrationConfirmationEmail(String toEmail, String userName, String confirmationToken) {
         String subject = "Welcome to CES Cinema - Please Verify Your Email";
-        String confirmationUrl = baseUrl + "/api/auth/verify-email?token=" + confirmationToken;
+        String confirmationUrl = "http://localhost:3000/verify-email?token=" + confirmationToken;
+
 
         Context context = new Context();
         context.setVariables(Map.of("userName", userName, "confirmationUrl", confirmationUrl));
