@@ -5,11 +5,15 @@ import com.example.ces.model.Address;
 import com.example.ces.model.PaymentCard;
 import com.example.ces.model.User;
 import com.example.ces.service.UserService;
+import com.example.ces.service.EmailService;
+import com.example.ces.repository.VerificationTokenRepository;
+import com.example.ces.repository.PasswordResetTokenRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -23,6 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UserController.class)
+@AutoConfigureMockMvc(addFilters = false)
 public class UserControllerTest {
 
     @Autowired
@@ -30,6 +35,15 @@ public class UserControllerTest {
 
     @MockBean
     private UserService userService;
+
+        @MockBean
+        private EmailService emailService;
+
+        @MockBean
+        private VerificationTokenRepository verificationTokenRepository;
+
+        @MockBean
+        private PasswordResetTokenRepository passwordResetTokenRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -54,7 +68,8 @@ public class UserControllerTest {
 
         when(userService.getUserById(anyString())).thenReturn(java.util.Optional.of(user));
 
-        mockMvc.perform(get("/api/users/" + user.getId()))
+        mockMvc.perform(get("/api/users/" + user.getId())
+                .header("X-User-Id", user.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.firstName").value("Tasnuva"))
                 .andExpect(jsonPath("$.email").value("tas@example.com"));
@@ -86,6 +101,7 @@ public class UserControllerTest {
                 .thenReturn(updatedUser);
 
         mockMvc.perform(put("/api/users/" + userId + "/profile")
+                        .header("X-User-Id", userId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(profileDTO)))
                 .andExpect(status().isOk())
@@ -119,6 +135,7 @@ public class UserControllerTest {
         when(userService.addPaymentCard(eq(userId), any(PaymentCard.class))).thenReturn(savedCard);
 
         mockMvc.perform(post("/api/users/" + userId + "/payment-cards")
+                        .header("X-User-Id", userId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(newCard)))
                 .andExpect(status().isOk())

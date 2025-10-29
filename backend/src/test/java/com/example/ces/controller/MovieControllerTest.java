@@ -8,6 +8,7 @@ import com.example.ces.model.Showtime;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -20,6 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
 @WebMvcTest(MovieController.class)
+@AutoConfigureMockMvc(addFilters = false)
 public class MovieControllerTest {
 
     @Autowired
@@ -72,9 +74,9 @@ public class MovieControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().json(
                         "[{" +
-                                "'id':'1','title':'The Matrix','director':'Lana Wachowski, Lilly Wachowski','year':1999,'genres':['Action'],'rating':'R','description':'A computer hacker learns about reality.','posterUrl':'poster_url_here','trailerUrl':'trailer_url_here','showtimes':['2:00 PM','5:00 PM','8:00 PM']" +
+                                "'id':'1','title':'The Matrix','director':'Lana Wachowski, Lilly Wachowski','year':1999,'genres':['Action'],'rating':'R','description':'A computer hacker learns about reality.','posterUrl':'poster_url_here','trailerUrl':'trailer_url_here','showtimes':[{'time':'2:00 PM'},{'time':'5:00 PM'},{'time':'8:00 PM'}]" +
                                 "},{" +
-                                "'id':'2','title':'Inception','director':'Christopher Nolan','year':2010,'genres':['Sci-Fi'],'rating':'PG-13','description':'A thief steals corporate secrets through dream-sharing technology.','posterUrl':'poster_url_here','trailerUrl':'trailer_url_here','showtimes':['1:00 PM','4:00 PM','7:00 PM']" +
+                                "'id':'2','title':'Inception','director':'Christopher Nolan','year':2010,'genres':['Sci-Fi'],'rating':'PG-13','description':'A thief steals corporate secrets through dream-sharing technology.','posterUrl':'poster_url_here','trailerUrl':'trailer_url_here','showtimes':[{'time':'1:00 PM'},{'time':'4:00 PM'},{'time':'7:00 PM'}]" +
                                 "}]"));
     }
 }
