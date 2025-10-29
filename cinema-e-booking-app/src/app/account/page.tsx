@@ -85,7 +85,7 @@ const AccountPage = () => {
         <NavBar />
         <section className="py-14 md:py-24 bg-[#0b1727] text-white min-h-screen">
         <div className="container px-4 mx-auto">
-            <div className="grid grid-cols-12 justify-center mb-6 md:mb-12">
+            <div className="grid grid-cols-14 justify-center mb-6 md:mb-12">
             <div className="col-span-12 lg:col-span-6 lg:col-start-4 text-center">
                 <h2 className="text-3xl md:text-[45px] font-bold mb-6">Account Details</h2>
             </div>
@@ -103,9 +103,7 @@ const AccountPage = () => {
                 <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Last name" className="px-4 py-2 rounded-md bg-[#0b1727] border border-gray-700 text-white" />
             </div>
 
-            <div className="mt-4">
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" className="w-full px-4 py-2 rounded-md bg-[#0b1727] border border-gray-700 text-white" />
-            </div>
+            
 
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>

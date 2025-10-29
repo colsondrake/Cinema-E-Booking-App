@@ -9,23 +9,19 @@ public class Theatre {
     private String name;
     private String location;
     private int numberOfShowrooms;
+    private List<Showroom> showrooms = new ArrayList<>();
 
     public Theatre() {
     }
     
     public void addShowroom(Showroom showroom) {
         this.numberOfShowrooms += 1;
-        new Showroom();
+        showrooms.add(showroom);
     }
 
     public List<Showroom> getShowrooms() {
         // Implementation to return list of showrooms
-        return new ArrayList<>();
-    }
-
-    public List<Showroom> getAvailableShowrooms() {
-        // Implementation to return list of available showrooms
-        return new ArrayList<>();
+        return showrooms;
     }
 
     // Getters and Setters

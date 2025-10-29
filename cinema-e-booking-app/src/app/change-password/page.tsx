@@ -95,28 +95,31 @@ export default function ChangePasswordPage() {
   return (
     <>
       <NavBar />
-
+  
       <section className="py-14 md:py-24 bg-[#0b1727] text-white min-h-screen">
-        <div className="container px-4 mx-auto">
-          <div className="grid grid-cols-12 justify-center mb-6 md:mb-12">
-            <div className="col-span-12 lg:col-span-6 lg:col-start-4 text-center">
-              <h2 className="text-3xl md:text-[45px] font-bold mb-6">
-                Change Password
-              </h2>
-              {/* Centered, fixed-width Account sub-nav */}
-              <div className="mx-auto mb-10 w-[770px] flex justify-center">
-                <AccountNavbar />
-              </div>
-            </div>
-          </div>
+      <div className="container px-4 mx-auto">
+      {/* Center the entire content block */}
+      <div className="grid grid-cols-12 justify-center mb-6 md:mb-12">
+      <div className="col-span-12 flex flex-col items-center text-center">
+        <h2 className="text-3xl md:text-[45px] font-bold mb-6">
+          Change Password
+        </h2>
 
-          <div className="max-w-3xl mx-auto bg-[#17233a] p-6 rounded-xl border border-[#17233a]">
-            {error && <div className="text-red-400 mb-4">{error}</div>}
-            {message && <div className="text-green-400 mb-4">{message}</div>}
-            {loadingUser && (
-              <div className="text-gray-300 mb-4">Loading your account…</div>
-            )}
+        {/* Centered, fixed-width Account sub-nav */}
+        <div className="mx-auto mb-6 w-[770px] flex justify-center">
+          <AccountNavbar />
+        </div>
+      </div>
+      </div>
 
+      <div className="max-w-3xl mx-auto bg-[#17233a] p-6 rounded-xl border border-[#17233a]">
+        {error && <div className="text-red-400 mb-4">{error}</div>}
+        {message && <div className="text-green-400 mb-4">{message}</div>}
+        {loadingUser && (
+          <div className="text-gray-300 mb-4">Loading your account…</div>
+        )}
+
+  
             <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
               <input
                 type="password"
@@ -141,7 +144,7 @@ export default function ChangePasswordPage() {
                 className="px-4 py-2 rounded-md bg-[#0b1727] border border-gray-700 text-white"
                 minLength={8}
               />
-
+  
               <div className="mt-3 flex gap-2">
                 <button
                   type="submit"
@@ -173,10 +176,9 @@ export default function ChangePasswordPage() {
                   Logout
                 </button>
               </div>
-
+  
               <div className="text-sm text-gray-300 mt-2">
-                Signed in as{" "}
-                <span className="font-medium">{account.email}</span>
+                Signed in as <span className="font-medium">{account.email}</span>
               </div>
             </form>
           </div>
@@ -184,4 +186,5 @@ export default function ChangePasswordPage() {
       </section>
     </>
   );
+  
 }
