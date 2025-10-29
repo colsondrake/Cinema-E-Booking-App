@@ -74,11 +74,11 @@ public class UserController {
         try {
             User user = userService.login(loginDTO.getUsername().trim(), loginDTO.getPassword().trim());
 
-            // Require email verification before allowing login (optional)
-            // if (!user.isEmailVerified()) {
-            // return ResponseEntity.status(HttpStatus.FORBIDDEN)
-            // .body(Map.of("error", "Email address has not been verified"));
-            // }
+           
+            if (!user.isEmailVerified()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Email address has not been verified"));
+            }
 
             Map<String, Object> response = new HashMap<>();
             response.put("id", user.getId());
@@ -313,4 +313,17 @@ public class UserController {
         return callerId.equals(targetUserId);
     }
 
+    // Check if email exists
+    @GetMapping("/exists")
+    public ResponseEntity<?> checkEmailExists(@RequestParam String email) {
+        boolean exists = userService.emailExists(email);
+        return ResponseEntity.ok(Map.of("exists", exists));
+    }
+
+    // Check if email is verified
+    @GetMapping("/verify-email")
+    public ResponseEntity<?> checkEmailVerified(@RequestParam String email) {
+        boolean verified = userService.isEmailVerified(email);
+        return ResponseEntity.ok(Map.of("emailVerified", verified));
+    }
 }
