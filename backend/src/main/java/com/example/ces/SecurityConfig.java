@@ -1,4 +1,4 @@
-package com.example.ces.config;
+package com.example.ces;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -224,7 +224,8 @@ public class UserService {
         user.setEmail(dto.getEmail());
         user.setPassword(passwordEncoder.encode(dto.getPassword())); // ✅ hash before save
         user.setPhone(dto.getPhone());
-        user.setIsActive(false);
+        user.setIsActive(false); // require email verification flow
+        user.setEmailVerified(false);
         user.setIsSubscribedToPromotions(dto.isSubscribeToPromotions());
 
         if (dto.getHomeAddress() != null) {
