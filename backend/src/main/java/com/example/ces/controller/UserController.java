@@ -38,7 +38,14 @@ public class UserController {
 
     /** Fetch user profile by ID */
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUserProfile(@PathVariable String id) {
+    public ResponseEntity<?> getUserProfile(@PathVariable String id,
+                                            @RequestHeader(value = "X-User-Id", required = false) String callerId,
+                                            @RequestHeader(value = "X-User-Role", required = false) String callerRole) {
+        // Only owner or ADMIN can fetch full profile
+        if (!isAuthorized(callerId, callerRole, id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Not authorized"));
+        }
+
         return userService.getUserById(id)
                 .map(user -> {
                     Map<String, Object> response = new HashMap<>();
@@ -79,6 +86,7 @@ public class UserController {
             response.put("lastName", user.getLastName());
             response.put("email", user.getEmail());
             response.put("phone", user.getPhone());
+            response.put("role", user.getRole());
             response.put("emailVerified", user.isEmailVerified());
             response.put("isActive", user.isActive());
             response.put("homeAddress", user.getHomeAddress());
@@ -145,15 +153,20 @@ public class UserController {
     public ResponseEntity<?> updateProfile(
             @PathVariable String id,
             @Valid @RequestBody UserProfileDTO profileDTO,
-            @RequestParam(required = false) String currentPassword) {
+            @RequestParam(required = false) String currentPassword,
+            @RequestHeader(value = "X-User-Id", required = false) String callerId,
+            @RequestHeader(value = "X-User-Role", required = false) String callerRole) {
         try {
+            // Authorization: only the owner or ADMIN can update the profile
+            if (!isAuthorized(callerId, callerRole, id)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Not authorized"));
+            }
             if (profileDTO.getNewPassword() != null && !profileDTO.getNewPassword().isEmpty()) {
                 if (currentPassword == null || currentPassword.isEmpty()) {
                     return ResponseEntity.badRequest()
                             .body(Map.of("error", "Current password is required to change password"));
                 }
             }
-
             User updatedUser = userService.updateUserProfile(id, profileDTO, currentPassword);
             return ResponseEntity.ok(Map.of(
                     "message", "Profile updated successfully",
@@ -172,7 +185,13 @@ public class UserController {
     }
 
     @PostMapping("/{id}/payment-cards")
-    public ResponseEntity<?> addPaymentCard(@PathVariable String id, @Valid @RequestBody PaymentCard card) {
+    public ResponseEntity<?> addPaymentCard(@PathVariable String id, @Valid @RequestBody PaymentCard card,
+                                            @RequestHeader(value = "X-User-Id", required = false) String callerId,
+                                            @RequestHeader(value = "X-User-Role", required = false) String callerRole) {
+        // Authorization: only owner or ADMIN can add a payment card for the user
+        if (!isAuthorized(callerId, callerRole, id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Not authorized"));
+        }
         try {
             PaymentCard savedCard = userService.addPaymentCard(id, card);
 
@@ -199,17 +218,27 @@ public class UserController {
 
     /** Get user's payment cards */
     @GetMapping("/{id}/payment-cards")
-    public ResponseEntity<?> getPaymentCards(@PathVariable String id) {
+    public ResponseEntity<?> getPaymentCards(@PathVariable String id,
+                                             @RequestHeader(value = "X-User-Id", required = false) String callerId,
+                                             @RequestHeader(value = "X-User-Role", required = false) String callerRole) {
+        if (!isAuthorized(callerId, callerRole, id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Not authorized"));
+        }
+
         return userService.getUserById(id)
-                .map(user -> {
-                    return ResponseEntity.ok(user.getPaymentCards());
-                })
+                .map(user -> ResponseEntity.ok(user.getPaymentCards()))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     /** Change password */
     @PostMapping("/{id}/change-password")
-    public ResponseEntity<?> changePassword(@PathVariable String id, @Valid @RequestBody PasswordChangeDTO dto) {
+    public ResponseEntity<?> changePassword(@PathVariable String id, @Valid @RequestBody PasswordChangeDTO dto,
+                                            @RequestHeader(value = "X-User-Id", required = false) String callerId,
+                                            @RequestHeader(value = "X-User-Role", required = false) String callerRole) {
+        // Only owner or ADMIN can change the password
+        if (!isAuthorized(callerId, callerRole, id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Not authorized"));
+        }
         try {
             if (!dto.isPasswordMatching()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "New passwords do not match"));
@@ -218,6 +247,25 @@ public class UserController {
             return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Logout (clear login state). Requires owner or ADMIN */
+    @PostMapping("/{id}/logout")
+    public ResponseEntity<?> logout(@PathVariable String id,
+                                    @RequestHeader(value = "X-User-Id", required = false) String callerId,
+                                    @RequestHeader(value = "X-User-Role", required = false) String callerRole) {
+        if (!isAuthorized(callerId, callerRole, id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Not authorized"));
+        }
+
+        try {
+            userService.logout(id);
+            return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Failed to logout"));
         }
     }
 
@@ -258,4 +306,11 @@ public class UserController {
                         "success", false,
                         "error", "User not found")));
     }
+    // Helper: simple authorization check — caller must be the owner or have ADMIN role.
+    private boolean isAuthorized(String callerId, String callerRole, String targetUserId) {
+        if (callerRole != null && callerRole.equalsIgnoreCase("ADMIN")) return true;
+        if (callerId == null) return false;
+        return callerId.equals(targetUserId);
+    }
+
 }
