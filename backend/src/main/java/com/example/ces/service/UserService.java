@@ -4,8 +4,11 @@ import com.example.ces.model.*;
 import com.example.ces.repository.*;
 import com.example.ces.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.ces.service.EmailService;
+import com.example.ces.util.AESEncryptionService;
 
 import java.util.*;
 
@@ -15,6 +18,15 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private AESEncryptionService encryptionService;
+
+    @Autowired
+    private EmailService emailService;
 
     /**
      * Get user by ID
@@ -31,55 +43,102 @@ public class UserService {
     }
 
     /**
+     * Login user with email/password
+     */
+    public User login(String email, String password) {
+        if (email == null || email.isBlank() || password == null || password.isBlank()) {
+            throw new IllegalArgumentException("Email and password must not be empty");
+        }
+
+        // Trim input to avoid accidental whitespace issues
+        String trimmedEmail = email.trim();
+        String trimmedPassword = password.trim();
+
+        User user = userRepository.findByEmail(trimmedEmail)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+
+        // Debugging: Uncomment if login fails to see what's being compared
+        System.out.println("Login password: " + trimmedPassword);
+        System.out.println("Stored hash: " + user.getPassword());
+        System.out.println("Matches? " + passwordEncoder.matches(trimmedPassword,
+                user.getPassword()));
+
+        if (!passwordEncoder.matches(trimmedPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Invalid email or password");
+        }
+
+        // Mark user as logged in and persist (helps demo logout/session behavior)
+        try {
+            user.setIsLoggedIn(true);
+            userRepository.save(user);
+        } catch (Exception ignored) {}
+
+        return user;
+    }
+
+    /**
+     * Logout user (clear logged-in flag)
+     */
+    public void logout(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setIsLoggedIn(false);
+        userRepository.save(user);
+    }
+
+    /**
      * Update user profile
      */
     public User updateUserProfile(String userId, UserProfileDTO profileDTO, String currentPassword) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         boolean profileChanged = false;
 
-        // Update first name if changed
         if (profileDTO.getFirstName() != null && !profileDTO.getFirstName().isEmpty()) {
             user.setFirstName(profileDTO.getFirstName());
             profileChanged = true;
         }
 
-        // Update last name if changed
         if (profileDTO.getLastName() != null && !profileDTO.getLastName().isEmpty()) {
             user.setLastName(profileDTO.getLastName());
             profileChanged = true;
         }
 
-        // Update phone if changed
         if (profileDTO.getPhone() != null && !profileDTO.getPhone().isEmpty()) {
             user.setPhone(profileDTO.getPhone());
             profileChanged = true;
         }
 
-        // Update home address (only 1 allowed)
         if (profileDTO.getHomeAddress() != null) {
             user.setHomeAddress(profileDTO.getHomeAddress());
             profileChanged = true;
         }
 
-        // Update subscription preference
         if (profileDTO.isSubscribeToPromotions() != user.isSubscribedToPromotions()) {
             user.setIsSubscribedToPromotions(profileDTO.isSubscribeToPromotions());
             profileChanged = true;
         }
 
-        // Update password if provided
+        // ✅ Update password securely
         if (profileDTO.getNewPassword() != null && !profileDTO.getNewPassword().isEmpty()) {
-            // For now, skip password verification since we don't have PasswordEncoder configured yet
-            // In production, you would verify current password here
-            user.setPassword(profileDTO.getNewPassword()); // In production, this should be encrypted
+            if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+                throw new IllegalArgumentException("Current password is incorrect");
+            }
+            user.setPassword(passwordEncoder.encode(profileDTO.getNewPassword())); 
             profileChanged = true;
         }
 
-        // Save changes
         if (profileChanged) {
-            return userRepository.save(user);
+            User saved = userRepository.save(user);
+            try {
+                // Send notification email about profile change (best-effort)
+                String userName = (saved.getFirstName() != null && !saved.getFirstName().isBlank()) ? saved.getFirstName() : saved.getFullName();
+                emailService.sendProfileChangeNotification(saved.getEmail(), userName, "profile updated");
+            } catch (Exception ignored) {
+                // Do not fail the operation if email sending fails
+            }
+            return saved;
         }
 
         return user;
@@ -90,22 +149,39 @@ public class UserService {
      */
     public PaymentCard addPaymentCard(String userId, PaymentCard card) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // Check if user already has 3 cards
         if (user.getPaymentCards() != null && user.getPaymentCards().size() >= 3) {
             throw new IllegalArgumentException("Maximum 3 payment cards allowed");
         }
 
-        // Set user ID for the card
         card.setUserId(userId);
 
-        // Generate a temporary ID if not present
+        // Encrypt sensitive payment information before persisting
+        if (card.getCardNumber() != null && !card.getCardNumber().isEmpty()) {
+            // store encrypted full number
+            card.setEncryptedCardNumber(encryptionService.encrypt(card.getCardNumber()));
+            // ensure last four digits are set (PaymentCard#setCardNumber extracts these)
+            if (card.getLastFourDigits() == null || card.getLastFourDigits().isEmpty()) {
+                String cn = card.getCardNumber();
+                if (cn.length() >= 4) {
+                    card.setLastFourDigits(cn.substring(cn.length() - 4));
+                }
+            }
+            // Remove plain card number so it's not stored in cleartext
+            card.setCardNumber(null);
+        }
+
+        if (card.getCvv() != null && !card.getCvv().isEmpty()) {
+            card.setEncryptedCvv(encryptionService.encrypt(card.getCvv()));
+            // remove plaintext
+            card.setCvv(null);
+        }
+
         if (card.getId() == null) {
             card.setId(UUID.randomUUID().toString());
         }
 
-        // Add to user's cards
         user.addPaymentCard(card);
         userRepository.save(user);
 
@@ -117,26 +193,26 @@ public class UserService {
      */
     public void changePassword(String userId, String currentPassword, String newPassword) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // For now, simple password check (in production, use PasswordEncoder)
-        String existing = user.getPassword();
-        if (existing == null || !existing.equals(currentPassword)) {
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             throw new IllegalArgumentException("Current password is incorrect");
         }
 
-        // Update password (in production, encrypt it)
-        user.setPassword(newPassword);
+        user.setPassword(passwordEncoder.encode(newPassword));  
         userRepository.save(user);
     }
 
     /**
      * Register a new user (user)
      */
-    public User register(com.example.ces.dto.UserRegistrationDTO dto) {
-        if (dto == null) throw new IllegalArgumentException("Missing registration data");
-        if (!dto.isPasswordMatching()) throw new IllegalArgumentException("Passwords do not match");
-        if (dto.getEmail() == null || dto.getEmail().isBlank()) throw new IllegalArgumentException("Email is required");
+    public User register(UserRegistrationDTO dto) {
+        if (dto == null)
+            throw new IllegalArgumentException("Missing registration data");
+        if (!dto.isPasswordMatching())
+            throw new IllegalArgumentException("Passwords do not match");
+        if (dto.getEmail() == null || dto.getEmail().isBlank())
+            throw new IllegalArgumentException("Email is required");
 
         if (userRepository.existsByEmail(dto.getEmail())) {
             throw new IllegalArgumentException("Email already registered");
@@ -146,15 +222,26 @@ public class UserService {
         user.setFirstName(dto.getFirstName());
         user.setLastName(dto.getLastName());
         user.setEmail(dto.getEmail());
-        // NOTE: In production, passwords must be hashed using a PasswordEncoder
-        user.setPassword(dto.getPassword());
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setPhone(dto.getPhone());
         user.setIsActive(false); // require email verification flow
+        user.setEmailVerified(false);
         user.setIsSubscribedToPromotions(dto.isSubscribeToPromotions());
+
         if (dto.getHomeAddress() != null) {
             user.setHomeAddress(dto.getHomeAddress());
         }
 
         return userRepository.save(user);
+    }
+
+    public boolean emailExists(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    public boolean isEmailVerified(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return user.isEmailVerified();
     }
 }
