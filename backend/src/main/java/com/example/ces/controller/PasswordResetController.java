@@ -6,6 +6,7 @@ import com.example.ces.repository.PasswordResetTokenRepository;
 import com.example.ces.repository.UserRepository;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -19,11 +20,15 @@ public class PasswordResetController {
 
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public PasswordResetController(PasswordResetTokenRepository passwordResetTokenRepository,
-                                   UserRepository userRepository) {
+                                   UserRepository userRepository,
+                                   PasswordEncoder passwordEncoder) {
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+                                    
     }
 
     /**
@@ -82,20 +87,18 @@ public class PasswordResetController {
             }
 
             User user = userOpt.get();
-            user.setPassword(newPassword); // Note: In production, hash this!
+            String hashed = passwordEncoder.encode(newPassword);   // <-- hash it
+            user.setPassword(hashed);                               // <-- store hash
             userRepository.save(user);
 
-            // Invalidate the token
             prt.setUsed(true);
             prt.setExpiryDate(LocalDateTime.now());
             passwordResetTokenRepository.save(prt);
 
-            // Return simple HTML confirmation (works from browser click)
             String html = "<html><body><h3>Password updated successfully.</h3>" +
                     "<p>You can now close this tab and log in.</p></body></html>";
             return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
         } catch (Exception e) {
-            System.err.println("Failed to reset password: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "An unexpected error occurred."));
         }

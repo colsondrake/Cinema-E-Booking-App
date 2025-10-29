@@ -20,6 +20,7 @@ export type Address = {
 };
 
 export type Account = {
+  id: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -212,6 +213,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         : undefined;
 
       const acc: Account = {
+        id: json.id || "",
         firstName: json.firstName || "",
         lastName: json.lastName || "",
         email: json.email || email,
