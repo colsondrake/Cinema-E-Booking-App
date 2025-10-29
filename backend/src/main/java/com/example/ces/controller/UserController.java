@@ -74,12 +74,6 @@ public class UserController {
         try {
             User user = userService.login(loginDTO.getUsername().trim(), loginDTO.getPassword().trim());
 
-           
-            if (!user.isEmailVerified()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "Email address has not been verified"));
-            }
-
             Map<String, Object> response = new HashMap<>();
             response.put("id", user.getId());
             response.put("firstName", user.getFirstName());
