@@ -40,22 +40,22 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserProfile(@PathVariable String id) {
         return userService.getUserById(id)
-            .map(user -> {
-                Map<String, Object> response = new HashMap<>();
-                response.put("id", user.getId());
-                response.put("firstName", user.getFirstName());
-                response.put("lastName", user.getLastName());
-                response.put("email", user.getEmail());
-                response.put("phone", user.getPhone());
-                response.put("emailVerified", user.isEmailVerified());
-                response.put("isActive", user.isActive());
-                response.put("homeAddress", user.getHomeAddress());
-                response.put("paymentCards", user.getPaymentCards());
-                response.put("subscribeToPromotions", user.isSubscribedToPromotions());
+                .map(user -> {
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("id", user.getId());
+                    response.put("firstName", user.getFirstName());
+                    response.put("lastName", user.getLastName());
+                    response.put("email", user.getEmail());
+                    response.put("phone", user.getPhone());
+                    response.put("emailVerified", user.isEmailVerified());
+                    response.put("isActive", user.isActive());
+                    response.put("homeAddress", user.getHomeAddress());
+                    response.put("paymentCards", user.getPaymentCards());
+                    response.put("subscribeToPromotions", user.isSubscribedToPromotions());
 
-                return ResponseEntity.ok(response);
-            })
-            .orElse(ResponseEntity.notFound().build());
+                    return ResponseEntity.ok(response);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     /**
@@ -64,39 +64,33 @@ public class UserController {
      */
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDTO loginDTO) {
-        String username = loginDTO.getUsername();
-        String password = loginDTO.getPassword();
+        try {
+            User user = userService.login(loginDTO.getUsername().trim(), loginDTO.getPassword().trim());
 
-        return userService.getUserByEmail(username)
-            .map(user -> {
-                // Simple plaintext check (production: use PasswordEncoder)
-                if (user.getPassword() == null || !user.getPassword().equals(password)) {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body(Map.of("error", "Incorrect password"));
-                }
+            // Require email verification before allowing login (optional)
+            // if (!user.isEmailVerified()) {
+            // return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            // .body(Map.of("error", "Email address has not been verified"));
+            // }
 
-                // Require email verification before allowing login
-                // if (!user.isEmailVerified()) {
-                //     return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                //             .body(Map.of("error", "Email address has not been verified"));
-                // }
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", user.getId());
+            response.put("firstName", user.getFirstName());
+            response.put("lastName", user.getLastName());
+            response.put("email", user.getEmail());
+            response.put("phone", user.getPhone());
+            response.put("emailVerified", user.isEmailVerified());
+            response.put("isActive", user.isActive());
+            response.put("homeAddress", user.getHomeAddress());
+            response.put("paymentCards", user.getPaymentCards());
+            response.put("subscribeToPromotions", user.isSubscribedToPromotions());
 
-                Map<String, Object> response = new HashMap<>();
-                response.put("id", user.getId());
-                response.put("firstName", user.getFirstName());
-                response.put("lastName", user.getLastName());
-                response.put("email", user.getEmail());
-                response.put("phone", user.getPhone());
-                response.put("emailVerified", user.isEmailVerified());
-                response.put("isActive", user.isActive());
-                response.put("homeAddress", user.getHomeAddress());
-                response.put("paymentCards", user.getPaymentCards());
-                response.put("subscribeToPromotions", user.isSubscribedToPromotions());
+            return ResponseEntity.ok(response);
 
-                // Return full account details (excluding stored password)
-                return ResponseEntity.ok(response);
-            })
-            .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found")));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
 
     /** Register a new user */
@@ -115,17 +109,21 @@ public class UserController {
                 try {
                     created.setVerificationToken(confirmationToken);
                     created.setTokenExpiryDate(vt.getExpiresAt());
-                    // userService.register already saved the user; update save via userService if available.
-                    // We attempt to update by calling userService.updateUserProfile as a lightweight save if present,
+                    // userService.register already saved the user; update save via userService if
+                    // available.
+                    // We attempt to update by calling userService.updateUserProfile as a
+                    // lightweight save if present,
                     // otherwise the VerificationToken DBRef is sufficient for verification flows.
                     // (Avoid introducing new service methods in this quick change.)
                 } catch (Exception ignored) {
                     // ignore failures to set fields on returned object
                 }
 
-                emailService.sendRegistrationConfirmationEmail(created.getEmail(), created.getFirstName(), confirmationToken);
+                emailService.sendRegistrationConfirmationEmail(created.getEmail(), created.getFirstName(),
+                        confirmationToken);
             } catch (Exception e) {
-                // Don't fail registration if token persistence or email sending fails; log for debugging
+                // Don't fail registration if token persistence or email sending fails; log for
+                // debugging
                 System.err.println("Failed to create/send verification token: " + e.getMessage());
             }
             Map<String, Object> resp = new HashMap<>();
@@ -137,41 +135,39 @@ public class UserController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Failed to register user"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to register user"));
         }
     }
 
     /** Update user profile */
     @PutMapping("/{id}/profile")
     public ResponseEntity<?> updateProfile(
-        @PathVariable String id,
-        @Valid @RequestBody UserProfileDTO profileDTO,
-        @RequestParam(required = false) String currentPassword
-    ) {
+            @PathVariable String id,
+            @Valid @RequestBody UserProfileDTO profileDTO,
+            @RequestParam(required = false) String currentPassword) {
         try {
             if (profileDTO.getNewPassword() != null && !profileDTO.getNewPassword().isEmpty()) {
                 if (currentPassword == null || currentPassword.isEmpty()) {
                     return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Current password is required to change password"));
+                            .body(Map.of("error", "Current password is required to change password"));
                 }
             }
 
             User updatedUser = userService.updateUserProfile(id, profileDTO, currentPassword);
             return ResponseEntity.ok(Map.of(
-                "message", "Profile updated successfully",
-                "user", Map.of(
-                    "id", updatedUser.getId(),
-                    "firstName", updatedUser.getFirstName(),
-                    "lastName", updatedUser.getLastName(),
-                    "email", updatedUser.getEmail(),
-                    "phone", updatedUser.getPhone()
-                )
-            ));
+                    "message", "Profile updated successfully",
+                    "user", Map.of(
+                            "id", updatedUser.getId(),
+                            "firstName", updatedUser.getFirstName(),
+                            "lastName", updatedUser.getLastName(),
+                            "email", updatedUser.getEmail(),
+                            "phone", updatedUser.getPhone())));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Failed to update profile"));
+                    .body(Map.of("error", "Failed to update profile"));
         }
     }
 
@@ -186,15 +182,13 @@ public class UserController {
             }
 
             return ResponseEntity.ok(Map.of(
-                "message", "Payment card added successfully",
-                "card", Map.of(
-                    "id", savedCard.getId(),
-                    "cardType", savedCard.getCardType(),
-                    "lastFourDigits", savedCard.getLastFourDigits(),
-                    "expiryDate", savedCard.getExpiryDate(),
-                    "cardholderName", savedCard.getCardholderName()
-                )
-            ));
+                    "message", "Payment card added successfully",
+                    "card", Map.of(
+                            "id", savedCard.getId(),
+                            "cardType", savedCard.getCardType(),
+                            "lastFourDigits", savedCard.getLastFourDigits(),
+                            "expiryDate", savedCard.getExpiryDate(),
+                            "cardholderName", savedCard.getCardholderName())));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
@@ -207,10 +201,10 @@ public class UserController {
     @GetMapping("/{id}/payment-cards")
     public ResponseEntity<?> getPaymentCards(@PathVariable String id) {
         return userService.getUserById(id)
-            .map(user -> {
-                return ResponseEntity.ok(user.getPaymentCards());
-            })
-            .orElse(ResponseEntity.notFound().build());
+                .map(user -> {
+                    return ResponseEntity.ok(user.getPaymentCards());
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     /** Change password */
@@ -236,29 +230,32 @@ public class UserController {
         String email = dto.getEmail();
 
         return userService.getUserByEmail(email)
-            .map(user -> {
-                // Remove existing reset tokens for this user to avoid multiple valid tokens
-                try {
-                    passwordResetTokenRepository.deleteByUserId(user.getId());
-                } catch (Exception ignored) {}
+                .map(user -> {
+                    // Remove existing reset tokens for this user to avoid multiple valid tokens
+                    try {
+                        passwordResetTokenRepository.deleteByUserId(user.getId());
+                    } catch (Exception ignored) {
+                    }
 
-                // Create and save a new password reset token
-                String token = UUID.randomUUID().toString();
-                com.example.ces.model.PasswordResetToken prt = new com.example.ces.model.PasswordResetToken(token, user.getId(), user.getEmail());
-                passwordResetTokenRepository.save(prt);
+                    // Create and save a new password reset token
+                    String token = UUID.randomUUID().toString();
+                    com.example.ces.model.PasswordResetToken prt = new com.example.ces.model.PasswordResetToken(token,
+                            user.getId(), user.getEmail());
+                    passwordResetTokenRepository.save(prt);
 
-                // Send password reset email
-                String userName = (user.getFirstName() != null && !user.getFirstName().isBlank()) ? user.getFirstName() : (user.getFullName() != null ? user.getFullName() : "User");
-                emailService.sendPasswordResetEmail(user.getEmail(), userName, token);
+                    // Send password reset email
+                    String userName = (user.getFirstName() != null && !user.getFirstName().isBlank())
+                            ? user.getFirstName()
+                            : (user.getFullName() != null ? user.getFullName() : "User");
+                    emailService.sendPasswordResetEmail(user.getEmail(), userName, token);
 
-                Map<String, Object> body = new HashMap<>();
-                body.put("message", "Password reset email sent");
-                body.put("success", true);
-                return ResponseEntity.ok(body);
-            })
-            .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
-                "success", false,
-                "error", "User not found"
-            )));
+                    Map<String, Object> body = new HashMap<>();
+                    body.put("message", "Password reset email sent");
+                    body.put("success", true);
+                    return ResponseEntity.ok(body);
+                })
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                        "success", false,
+                        "error", "User not found")));
     }
 }
