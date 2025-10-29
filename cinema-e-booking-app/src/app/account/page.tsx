@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount, PaymentCard } from "../../context/AccountContext";
 import NavBar from "@/components/Navbar";
+import AccountNavbar from "@/components/AccountNavbar";
 
 const genId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,9)}`;
 
@@ -88,6 +89,10 @@ const AccountPage = () => {
             <div className="col-span-12 lg:col-span-6 lg:col-start-4 text-center">
                 <h2 className="text-3xl md:text-[45px] font-bold mb-6">Account Details</h2>
             </div>
+            </div>
+
+            <div className="mx-auto mb-10 w-[770px] flex justify-center">
+                <AccountNavbar />
             </div>
 
             <div className="max-w-3xl mx-auto bg-[#17233a] p-6 rounded-xl border border-[#17233a]">
