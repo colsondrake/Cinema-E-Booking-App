@@ -20,6 +20,7 @@ const SignupPage = () => {
 
   // Optional fields
   const [hasCard, setHasCard] = useState(false);
+  const [subPromo, setSubPromo] = useState(false);
   const [cardHolder, setCardHolder] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [expiry, setExpiry] = useState("");
@@ -157,6 +158,8 @@ const SignupPage = () => {
                     <label className="flex items-center gap-2">
                         <input type="checkbox" checked={hasCard} onChange={(e) => setHasCard(e.target.checked)} />
                         <span className="cursor-pointer">Add payment card information (optional)</span>
+                        <input type="checkbox" checked={subPromo} onChange={(e) => setSubPromo(e.target.checked)} />
+                        <span className="cursor-pointer">Subscribe to promotions (optional)</span>
                     </label>
                   </div>
 

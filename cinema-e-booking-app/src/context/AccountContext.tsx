@@ -34,9 +34,18 @@ type AccountContextType = {
   createAccount: (acc: Account) => Promise<{ success: boolean; message?: string }>;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  updateAccount: (patch: Partial<Account>) => void;
-  addCard: (card: PaymentCard) => boolean; // returns false if max reached
-  removeCard: (cardId: string) => void;
+  updateAccount: (
+    patch: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      address?: Address;
+      newPassword?: string;
+      currentPassword?: string;
+      subscribeToPromotions?: boolean;
+    }
+  ) => Promise<{ success: boolean; message?: string }>;
+  addCard: (card: PaymentCard) => Promise<{ success: boolean; message?: string }>; // returns success and optional message
   requestPasswordReset?: (email: string) => Promise<{ success: boolean; message: string }>;
   changePassword?: (
     userId: string,
@@ -60,6 +69,33 @@ const maskCardNumber = (num: string) => {
 export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   
   const [account, setAccount] = useState<Account | null>(null);
+
+  const persistAccount = (acc: Account | null) => {
+    if (!acc) return;
+    const safeToStore: Account = {
+      ...acc,
+      paymentCards: (acc.paymentCards || []).map((c) => ({
+        ...c,
+        cardNumber: maskCardNumber(c.cardNumber),
+        cvv: undefined,
+      })),
+    } as Account;
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(safeToStore));
+    } catch (e) {
+      console.warn("Failed to persist account to sessionStorage", e);
+    }
+  };
+
+  const detectCardType = (num: string): string => {
+    const digits = (num || "").replace(/\D/g, "");
+    if (/^4/.test(digits)) return "VISA";
+    if (/^(5[1-5])/.test(digits)) return "MASTERCARD";
+    if (/^(222[1-9]|22[3-9]\d|2[3-6]\d{2}|27[01]\d|2720)/.test(digits)) return "MASTERCARD";
+    if (/^(34|37)/.test(digits)) return "AMEX";
+    if (/^(6(?:011|5))/.test(digits)) return "DISCOVER";
+    return "UNKNOWN";
+  };
 
   const createAccount = async (acc: Account): Promise<{ success: boolean; message?: string }> => {
     try {
@@ -249,29 +285,153 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // Alternatively remove storage entirely: sessionStorage.removeItem(STORAGE_KEY);
   };
 
-  const updateAccount = (patch: Partial<Account>) => {
-    setAccount(prev => {
-      const updated = { ...((prev as Account) || {}), ...patch } as Account;
-      // persist(updated);
-      return updated;
-    });
+  const updateAccount = async (
+    patch: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      address?: Address;
+      newPassword?: string;
+      currentPassword?: string;
+      subscribeToPromotions?: boolean;
+    }
+  ): Promise<{ success: boolean; message?: string }> => {
+    try {
+      if (!account || !account.id) {
+        return { success: false, message: "No user session found" };
+      }
+
+      // Build UserProfileDTO payload
+      const payload: any = {
+        firstName: patch.firstName,
+        lastName: patch.lastName,
+        phone: patch.phone,
+        subscribeToPromotions: patch.subscribeToPromotions,
+      };
+
+      if (patch.address) {
+        payload.homeAddress = {
+          street: patch.address.street || "",
+          city: patch.address.city || "",
+          state: patch.address.state || "",
+          zipCode: (patch.address as any).zipCode || patch.address.postalCode || "",
+          country: patch.address.country || undefined,
+        };
+      }
+
+      if (patch.newPassword && patch.newPassword.trim().length > 0) {
+        payload.newPassword = patch.newPassword.trim();
+        if (!patch.currentPassword || patch.currentPassword.trim().length === 0) {
+          return { success: false, message: "Current password is required to change password" };
+        }
+      }
+
+      // Remove undefined keys
+      Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
+
+      let url = `http://localhost:8080/api/users/${encodeURIComponent(account.id)}/profile`;
+      if (payload.newPassword) {
+        url += `?currentPassword=${encodeURIComponent(patch.currentPassword as string)}`;
+      }
+
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Id": account.id,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        // Try to surface backend validation messages
+        let msg = (json && (json.error || json.message)) || `Server returned ${res.status}`;
+        if (Array.isArray(json?.errors)) {
+          msg = json.errors.map((e: any) => e.defaultMessage || e.message).join('; ');
+        }
+        return { success: false, message: msg };
+      }
+
+      // Update local account with returned user data and/or provided patch
+      const userResp = json?.user || {};
+      const updated: Account = {
+        ...(account as Account),
+        firstName: userResp.firstName ?? patch.firstName ?? (account as Account).firstName,
+        lastName: userResp.lastName ?? patch.lastName ?? (account as Account).lastName,
+        email: userResp.email ?? (account as Account).email,
+        // We don't store phone in Account type; ignore for now.
+        address: patch.address ? { ...(account as Account).address, ...patch.address } : (account as Account).address,
+        // Do not store plaintext passwords; if changed successfully, clear local password for safety.
+        password: payload.newPassword ? "" : (account as Account).password,
+      } as Account;
+
+      setAccount(updated);
+      persistAccount(updated);
+      return { success: true, message: (json && (json.message || "Profile updated successfully")) || "Profile updated successfully" };
+    } catch (e: any) {
+      return { success: false, message: e?.message || "Failed to update profile" };
+    }
   };
 
-  const addCard = (card: PaymentCard) => {
-    if (!account) return false;
-    const existing = account.paymentCards || [];
-    if (existing.length >= 3) return false;
-    const updated: Account = { ...account, paymentCards: [...existing, card] };
-    setAccount(updated);
-    // persist(updated);
-    return true;
-  };
+  const addCard = async (card: PaymentCard): Promise<{ success: boolean; message?: string }> => {
+    try {
+      if (!account || !account.id) {
+        return { success: false, message: "No user session found" };
+      }
+      const currentCards = account.paymentCards || [];
+      if (currentCards.length >= 4) {
+        return { success: false, message: "Maximum of 3 cards reached" };
+      }
 
-  const removeCard = (cardId: string) => {
-    if (!account) return;
-    const updated: Account = { ...account, paymentCards: (account.paymentCards || []).filter(c => c.id !== cardId) };
-    setAccount(updated);
-    // persist(updated);
+      // Build payload for backend PaymentCard model
+      const digits = (card.cardNumber || "").replace(/\D/g, "");
+      if (digits.length < 12) {
+        return { success: false, message: "Card number appears invalid" };
+      }
+      const payload: any = {
+        cardholderName: card.cardholderName,
+        cardNumber: digits,
+        expiryDate: card.expiry, // backend expects expiryDate per controller usage
+        cardType: detectCardType(digits),
+      };
+
+      const res = await fetch(`http://localhost:8080/api/users/${encodeURIComponent(account.id)}/payment-cards`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Id": account.id,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = (json && (json.error || json.message)) || `Server returned ${res.status}`;
+        return { success: false, message: msg };
+      };
+
+      // Expect shape { message, card: { id, cardType, lastFourDigits, expiryDate, cardholderName } }
+      const serverCard = (json && json.card) || {};
+      const added: PaymentCard = {
+        id: serverCard.id || card.id || `${Date.now()}`,
+        cardholderName: serverCard.cardholderName || card.cardholderName,
+        cardNumber: serverCard.lastFourDigits
+          ? `**** **** **** ${serverCard.lastFourDigits}`
+          : maskCardNumber(card.cardNumber),
+        expiry: serverCard.expiryDate || card.expiry,
+      };
+
+      const updated: Account = {
+        ...(account as Account),
+        paymentCards: [...currentCards, added],
+      };
+      setAccount(updated);
+      persistAccount(updated);
+      return { success: true, message: json?.message || "Payment card added" };
+    } catch (e: any) {
+      return { success: false, message: e?.message || "Failed to add card" };
+    }
   };
 
   // Request a password reset email for the provided address
@@ -318,7 +478,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   return (
-    <AccountContext.Provider value={{ account, createAccount, login, logout, updateAccount, addCard, removeCard, requestPasswordReset, changePassword }}>
+    <AccountContext.Provider value={{ account, createAccount, login, logout, updateAccount, addCard, requestPasswordReset, changePassword }}>
       {children}
     </AccountContext.Provider>
   );
