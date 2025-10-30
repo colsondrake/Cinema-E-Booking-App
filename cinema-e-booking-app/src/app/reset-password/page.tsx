@@ -92,7 +92,18 @@ export default function ResetPasswordPage() {
           onSubmit={onSubmit}
           className="col-span-12 text-center mt-6 flex flex-col items-center gap-4"
         >
-          <div className="flex flex-row gap-2 w-full max-w-2xl justify-center items-center">
+          <div className="flex flex-col gap-2 w-full max-w-2xl justify-center items-center">
+            <input
+              type="password"
+              placeholder="Enter previous password"
+              // value={}
+              onChange={() => {}}
+              minLength={8}
+              required
+              className="w-full max-w-xs px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-[#17233a] border-gray-700 text-white"
+              aria-label="New password"
+            />
+
             <input
               type="password"
               placeholder="Enter new password"

@@ -152,9 +152,12 @@ const Booking = () => {
                             </div>
                             {/* Show confirmation message after submission */}
                             {submitted ? (
+                                // <div className="text-center text-green-600 text-lg font-semibold py-8">
+                                //     Thank you for your booking, {name || "Guest"}!<br />
+                                //     A confirmation has been sent to {email || "your email"}.
+                                // </div>
                                 <div className="text-center text-green-600 text-lg font-semibold py-8">
                                     Thank you for your booking, {name || "Guest"}!<br />
-                                    A confirmation has been sent to {email || "your email"}.
                                 </div>
                             ) : (
                                 // Booking form
