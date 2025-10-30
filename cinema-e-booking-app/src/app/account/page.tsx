@@ -10,16 +10,12 @@ const genId = () => `${Date.now().toString(36)}-${Math.random().toString(36).sli
 
 const AccountPage = () => {
   const router = useRouter();
-  const { account, updateAccount, addCard, logout } = useAccount();
+  const { account, updateAccountField, updateAccount, addCard, logout } = useAccount();
 
-  const [firstName, setFirstName] = useState(account?.firstName || "");
-  const [lastName, setLastName] = useState(account?.lastName || "");
-  const [address, setAddress] = useState(account?.address || { street: "", city: "", state: "", postalCode: "", country: "" });
   const [cardHolder, setCardHolder] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [expiry, setExpiry] = useState("");
   const [cvv, setCvv] = useState("");
-  const [subPromo, setSubPromo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
@@ -39,7 +35,7 @@ const AccountPage = () => {
     const handleSave = async () => {
         setError(null);
         setSaveMessage(null);
-        const result = await updateAccount({ firstName, lastName, address });
+        const result = await updateAccount(account);
         if (!result.success) {
             setError(result.message || "Failed to update profile");
         } else {
@@ -108,8 +104,8 @@ const AccountPage = () => {
             {saveMessage && <div className="text-green-400 mb-4">{saveMessage}</div>}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="First name" className="px-4 py-2 rounded-md bg-[#0b1727] border border-gray-700 text-white" />
-                <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Last name" className="px-4 py-2 rounded-md bg-[#0b1727] border border-gray-700 text-white" />
+                <input value={account.firstName} onChange={e => updateAccountField("firstName", e.target.value)} placeholder="First name" className="px-4 py-2 rounded-md bg-[#0b1727] border border-gray-700 text-white" />
+                <input value={account.lastName} onChange={e => updateAccountField("lastName", e.target.value)} placeholder="Last name" className="px-4 py-2 rounded-md bg-[#0b1727] border border-gray-700 text-white" />
             </div>
 
             
@@ -117,9 +113,9 @@ const AccountPage = () => {
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                 <h4 className="mb-2">Address</h4>
-                <input value={address.street} onChange={e => setAddress({ ...address, street: e.target.value })} placeholder="Street" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2" />
-                <input value={address.city} onChange={e => setAddress({ ...address, city: e.target.value })} placeholder="City" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2" />
-                <input value={address.postalCode} onChange={e => setAddress({ ...address, postalCode: e.target.value })} placeholder="Postal code" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white" />
+                <input value={account?.address?.street} onChange={() => {}} placeholder="Street" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2" />
+                <input value={account?.address?.city} onChange={() => {}} placeholder="City" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2" />
+                <input value={account?.address?.postalCode} onChange={() => {}} placeholder="Postal code" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white" />
                 </div>
             </div>
 
@@ -155,7 +151,7 @@ const AccountPage = () => {
             </div>
             <div className="mt-6">
             <label className="flex items-center gap-2">
-                <input type="checkbox" checked={subPromo} onChange={(e) => setSubPromo(e.target.checked)} />
+                <input type="checkbox" checked={account.isSubscribedToPromotions} onChange={(e) => updateAccountField("isSubscribedToPromotions", e.target.checked)} />
                 <span className="cursor-pointer">Subscribe to promotions (optional)</span>
             </label>
             </div>

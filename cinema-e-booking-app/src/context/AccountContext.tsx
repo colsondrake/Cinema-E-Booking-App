@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 // Types for account data
 export type PaymentCard = {
@@ -12,11 +12,11 @@ export type PaymentCard = {
 };
 
 export type Address = {
-  street?: string;
-  city?: string;
-  state?: string;
-  postalCode?: string;
-  country?: string;
+  street: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
 };
 
 export type Account = {
@@ -24,40 +24,27 @@ export type Account = {
   firstName: string;
   lastName: string;
   email: string;
-  password: string; // for demo only; do NOT store plaintext passwords in production
+  password: string; 
+  isLoggedIn: boolean;
+  emailVerified: boolean;
+  isActive: boolean;
+  role: string;
   paymentCards?: PaymentCard[];
   address?: Address;
+  isSubscribedToPromotions: boolean;
 };
 
 type AccountContextType = {
   account: Account | null;
+  updateAccountField: <K extends keyof Account>(field: K, value: Account[K]) => void;
   createAccount: (acc: Account) => Promise<{ success: boolean; message?: string }>;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  updateAccount: (
-    patch: {
-      firstName?: string;
-      lastName?: string;
-      phone?: string;
-      address?: Address;
-      newPassword?: string;
-      currentPassword?: string;
-      subscribeToPromotions?: boolean;
-    }
-  ) => Promise<{ success: boolean; message?: string }>;
+  updateAccount: (acc: Account) => Promise<{ success: boolean; message?: string }>;
   addCard: (card: PaymentCard) => Promise<{ success: boolean; message?: string }>; // returns success and optional message
-  requestPasswordReset?: (email: string) => Promise<{ success: boolean; message: string }>;
-  changePassword?: (
-    userId: string,
-    currentPassword: string,
-    newPassword: string,
-    confirmNewPassword: string
-  ) => Promise<{ success: boolean; message?: string }>;
 };
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
-
-const STORAGE_KEY = "cinema_account";
 
 // Helper to mask card number when persisting
 const maskCardNumber = (num: string) => {
@@ -70,21 +57,12 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
   
   const [account, setAccount] = useState<Account | null>(null);
 
-  const persistAccount = (acc: Account | null) => {
-    if (!acc) return;
-    const safeToStore: Account = {
-      ...acc,
-      paymentCards: (acc.paymentCards || []).map((c) => ({
-        ...c,
-        cardNumber: maskCardNumber(c.cardNumber),
-        cvv: undefined,
-      })),
-    } as Account;
-    try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(safeToStore));
-    } catch (e) {
-      console.warn("Failed to persist account to sessionStorage", e);
-    }
+  // Function to update a single field in the account
+  const updateAccountField = <K extends keyof Account>(field: K, value: Account[K]) => {
+    setAccount((prev) => {
+      if (!prev) return prev; // No account to update yet
+      return { ...prev, [field]: value };
+    });
   };
 
   const detectCardType = (num: string): string => {
@@ -105,19 +83,9 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         lastName: acc.lastName,
         email: acc.email,
         password: acc.password,
-        confirmPassword: acc.password, // frontend doesn't ask separately
-        // only include phone if present
+        confirmPassword: acc.password,
         phone: (acc as any).phone || undefined,
-        // map postalCode -> zipCode to match backend Address model
-        address: acc.address
-          ? {
-              street: acc.address.street,
-              city: acc.address.city,
-              state: acc.address.state,
-              zipCode: (acc.address as any).postalCode || (acc.address as any).zipCode || "",
-              country: acc.address.country || undefined,
-            }
-          : undefined,
+        address: acc.address || undefined,
         subscribeToPromotions: false,
       };
 
@@ -159,34 +127,11 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
             email: json.email || acc.email,
             password: acc.password,
             paymentCards: acc.paymentCards || [],
-            address: json.address || acc.address,
           } as Account;
         }
       } catch (e) {
         // no json body: fallback
         created = acc;
-      }
-
-      // Persist to sessionStorage (mask card numbers before storing)
-      const maskCardNumber = (num?: string) => {
-        if (!num) return "";
-        const digits = num.replace(/\D/g, "");
-        if (digits.length <= 4) return digits;
-        return "**** **** **** " + digits.slice(-4);
-      };
-
-      const safeToStore: Account = {
-        ...(created || acc),
-        paymentCards: (created?.paymentCards || acc.paymentCards || []).map((c) => ({
-          ...c,
-          cardNumber: maskCardNumber(c.cardNumber),
-        })),
-      } as Account;
-
-      try {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(safeToStore));
-      } catch (e) {
-        console.warn("Failed to persist account to sessionStorage", e);
       }
 
       setAccount(created || acc);
@@ -253,22 +198,14 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         firstName: json.firstName || "",
         lastName: json.lastName || "",
         email: json.email || email,
-        password: password, // demo only
+        password: password,
+        isLoggedIn: true,
+        emailVerified: true,
+        isActive: true,
+        role: "USER",
         paymentCards: mappedCards,
-        address: mappedAddress,
+        isSubscribedToPromotions: false,
       };
-
-      // Persist masked cards and account to sessionStorage
-      const safeToStore: Account = {
-        ...acc,
-        paymentCards: (acc.paymentCards || []).map((c) => ({ ...c, cardNumber: maskCardNumber(c.cardNumber) })),
-      };
-
-      try {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(safeToStore));
-      } catch (e) {
-        console.warn("Failed to persist account to sessionStorage", e);
-      }
 
       setAccount(acc);
       return true;
@@ -281,21 +218,9 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const logout = () => {
     setAccount(null);
-    // keep stored account in sessionStorage but clear current session representation
-    // Alternatively remove storage entirely: sessionStorage.removeItem(STORAGE_KEY);
   };
 
-  const updateAccount = async (
-    patch: {
-      firstName?: string;
-      lastName?: string;
-      phone?: string;
-      address?: Address;
-      newPassword?: string;
-      currentPassword?: string;
-      subscribeToPromotions?: boolean;
-    }
-  ): Promise<{ success: boolean; message?: string }> => {
+  const updateAccount = async (acc: Account): Promise<{ success: boolean; message?: string }> => {
     try {
       if (!account || !account.id) {
         return { success: false, message: "No user session found" };
@@ -303,36 +228,18 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       // Build UserProfileDTO payload
       const payload: any = {
-        firstName: patch.firstName,
-        lastName: patch.lastName,
-        phone: patch.phone,
-        subscribeToPromotions: patch.subscribeToPromotions,
+        firstName: acc.firstName,
+        lastName: acc.lastName,
+        phone: undefined,
+        homeAddress: acc.address || undefined,
+        newPassword: undefined,
+        subscribeToPromotions: acc.isSubscribedToPromotions,
       };
-
-      if (patch.address) {
-        payload.homeAddress = {
-          street: patch.address.street || "",
-          city: patch.address.city || "",
-          state: patch.address.state || "",
-          zipCode: (patch.address as any).zipCode || patch.address.postalCode || "",
-          country: patch.address.country || undefined,
-        };
-      }
-
-      if (patch.newPassword && patch.newPassword.trim().length > 0) {
-        payload.newPassword = patch.newPassword.trim();
-        if (!patch.currentPassword || patch.currentPassword.trim().length === 0) {
-          return { success: false, message: "Current password is required to change password" };
-        }
-      }
 
       // Remove undefined keys
       Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
 
       let url = `http://localhost:8080/api/users/${encodeURIComponent(account.id)}/profile`;
-      if (payload.newPassword) {
-        url += `?currentPassword=${encodeURIComponent(patch.currentPassword as string)}`;
-      }
 
       const res = await fetch(url, {
         method: "PUT",
@@ -353,21 +260,6 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return { success: false, message: msg };
       }
 
-      // Update local account with returned user data and/or provided patch
-      const userResp = json?.user || {};
-      const updated: Account = {
-        ...(account as Account),
-        firstName: userResp.firstName ?? patch.firstName ?? (account as Account).firstName,
-        lastName: userResp.lastName ?? patch.lastName ?? (account as Account).lastName,
-        email: userResp.email ?? (account as Account).email,
-        // We don't store phone in Account type; ignore for now.
-        address: patch.address ? { ...(account as Account).address, ...patch.address } : (account as Account).address,
-        // Do not store plaintext passwords; if changed successfully, clear local password for safety.
-        password: payload.newPassword ? "" : (account as Account).password,
-      } as Account;
-
-      setAccount(updated);
-      persistAccount(updated);
       return { success: true, message: (json && (json.message || "Profile updated successfully")) || "Profile updated successfully" };
     } catch (e: any) {
       return { success: false, message: e?.message || "Failed to update profile" };
@@ -427,58 +319,14 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         paymentCards: [...currentCards, added],
       };
       setAccount(updated);
-      persistAccount(updated);
       return { success: true, message: json?.message || "Payment card added" };
     } catch (e: any) {
       return { success: false, message: e?.message || "Failed to add card" };
     }
   };
 
-  // Request a password reset email for the provided address
-  const requestPasswordReset = async (email: string): Promise<{ success: boolean; message: string }> => {
-    try {
-      const res = await fetch("http://localhost:8080/api/users/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const msg = (json && (json.error || json.message)) || (res.status === 404 ? "Email not found" : `Server returned ${res.status}`);
-        return { success: false, message: msg };
-      }
-      return { success: true, message: (json && (json.message || "Password reset email sent")) || "Password reset email sent" };
-    } catch (e: any) {
-      return { success: false, message: e?.message || "Failed to request password reset" };
-    }
-  };
-
-  // Directly call backend change-password endpoint (for logged-in flows)
-  const changePassword = async (
-    userId: string,
-    currentPassword: string,
-    newPassword: string,
-    confirmNewPassword: string
-  ): Promise<{ success: boolean; message?: string }> => {
-    try {
-      const res = await fetch(`http://localhost:8080/api/users/${encodeURIComponent(userId)}/change-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentPassword, newPassword, confirmNewPassword }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        return { success: false, message: (json && (json.error || json.message)) || `Server returned ${res.status}` };
-      }
-      return { success: true, message: (json && json.message) || "Password changed successfully" };
-    } catch (e: any) {
-      return { success: false, message: e?.message || "Failed to change password" };
-    }
-  };
-
   return (
-    <AccountContext.Provider value={{ account, createAccount, login, logout, updateAccount, addCard, requestPasswordReset, changePassword }}>
+    <AccountContext.Provider value={{ account, updateAccountField, createAccount, login, logout, updateAccount, addCard }}>
       {children}
     </AccountContext.Provider>
   );
