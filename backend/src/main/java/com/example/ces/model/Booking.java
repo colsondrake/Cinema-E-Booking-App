@@ -11,7 +11,7 @@ public class Booking {
     private User user;
     private Showtime showtime;
     private LocalDate bookingDate;
-    private TicketTypePrice totalAmount;
+    private Ticket ticket;
     private int numberOfTickets;
     private PaymentCard paymentCard;
     private Promotion promotion;
@@ -54,12 +54,12 @@ public class Booking {
         this.bookingDate = bookingDate;
     }
 
-    public TicketTypePrice getTotalAmount() {
-        return totalAmount;
+    public Ticket getTicket() {
+        return ticket;
     }
 
-    public void setTotalAmount(TicketTypePrice totalAmount) {
-        this.totalAmount = totalAmount;
+    public void setTicket(Ticket ticket) {
+        this.ticket = ticket;
     }
 
     public int getNumberOfTickets() {
