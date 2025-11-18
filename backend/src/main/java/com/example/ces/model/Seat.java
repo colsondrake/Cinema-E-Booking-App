@@ -16,6 +16,12 @@ public class Seat {
     public Seat() {
     }
 
+    public Seat(int seatId, int row, String seatNumber) {
+        this.seatId = seatId;
+        this.row = row;
+        this.seatNumber = seatNumber;
+    }
+
     // Methods
     public boolean isBooked() {
         return isBooked;
