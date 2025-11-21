@@ -11,9 +11,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * User is now a concrete class. Role differentiates between normal users and admins.
- * Customer-specific functionality (address, payment cards, subscriptions) was migrated here
- * so existing code that relied on Customer can continue to work if Customer continues to extend User.
+ * User is now a concrete class. Role differentiates between normal users and
+ * admins.
+ * Customer-specific functionality (address, payment cards, subscriptions) was
+ * migrated here
+ * so existing code that relied on Customer can continue to work if Customer
+ * continues to extend User.
  */
 @Document(collection = "users")
 public class User {
@@ -63,9 +66,9 @@ public class User {
 
     // New full constructor
     public User(String id, String firstName, String lastName, String email,
-                String password, String phone, boolean isLoggedIn,
-                boolean emailVerified, boolean isActive, Address homeAddress,
-                List<PaymentCard> paymentCards, boolean isSubscribedToPromotions) {
+            String password, String phone, boolean isLoggedIn,
+            boolean emailVerified, boolean isActive, Address homeAddress,
+            List<PaymentCard> paymentCards, boolean isSubscribedToPromotions) {
         this();
         setId(id);
         setFirstName(firstName);
@@ -142,9 +145,12 @@ public class User {
     }
 
     public String getFullName() {
-        if (firstName == null && lastName == null) return "";
-        if (firstName == null) return lastName;
-        if (lastName == null) return firstName;
+        if (firstName == null && lastName == null)
+            return "";
+        if (firstName == null)
+            return lastName;
+        if (lastName == null)
+            return firstName;
         return firstName + " " + lastName;
     }
 
@@ -317,8 +323,7 @@ public class User {
     }
 
     public void setIsSubscribedToPromotions(boolean isSubscribed) {
-        
-        this.isSubscribedToPromotions = isSubscribedToPromotions;
+        this.isSubscribedToPromotions = isSubscribed;
     }
 
     // ---------------- Utility ----------------

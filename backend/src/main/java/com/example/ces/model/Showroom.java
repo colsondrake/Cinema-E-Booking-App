@@ -1,41 +1,48 @@
 package com.example.ces.model;
 
-import java.util.List;
-
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
+@Document(collection = "showrooms")
 public class Showroom {
-    @Id
-    private int showroomId;
-    private Theatre theatre; // Reference to Theatre 
-    private List<Seat> seats; // List of Seats in the Showroom
 
-    // Constructors
+    @Id
+    private String showroomId; // Must be String for MongoDB
+
+    private String name; // Optional but helpful for UI (e.g., "Showroom 1")
+    private int capacity; // Required for seat-generation and display
+
+    // Default constructor
     public Showroom() {
     }
 
-    // Getters and Setters
-    public int getShowroomId() {
+    public Showroom(String showroomId, String name, int capacity) {
+        this.showroomId = showroomId;
+        this.name = name;
+        this.capacity = capacity;
+    }
+
+    public String getShowroomId() {
         return showroomId;
     }
 
-    public void setShowroomId(int showroomId) {
+    public void setShowroomId(String showroomId) {
         this.showroomId = showroomId;
     }
 
-    public Theatre getTheatre() {
-        return theatre;
+    public String getName() {
+        return name;
     }
 
-    public void setTheatre(Theatre theatre) {
-        this.theatre = theatre;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public List<Seat> getSeats() {
-        return seats;
+    public int getCapacity() {
+        return capacity;
     }
 
-    public void setSeats(List<Seat> seats) {
-        this.seats = seats;
+    public void setCapacity(int capacity) {
+        this.capacity = capacity;
     }
 }
