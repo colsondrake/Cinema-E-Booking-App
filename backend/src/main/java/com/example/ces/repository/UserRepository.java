@@ -1,5 +1,6 @@
 package com.example.ces.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -10,5 +11,8 @@ import com.example.ces.model.User;
 @Repository
 public interface UserRepository extends MongoRepository<User, String> {
     Optional<User> findByEmail(String email);
+
     boolean existsByEmail(String email); // for registration check
+
+    List<User> findByIsSubscribedToPromotionsTrue();
 }
