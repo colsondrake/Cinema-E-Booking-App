@@ -15,7 +15,7 @@ public interface TicketRepository extends MongoRepository<Ticket, String> {
     List<Ticket> findByShowtimeId(int showtimeId);
     
     // Find tickets by showtime and seat number (to check seat availability)
-    List<Ticket> findByShowtimeIdAndSeat_SeatNumber(int showtimeId, String seatNumber);
+    List<Ticket> findByShowtimeIdAndSeatNumber(int showtimeId, String seatNumber);
     
     // Find tickets by ticket type
     List<Ticket> findByType(String type);

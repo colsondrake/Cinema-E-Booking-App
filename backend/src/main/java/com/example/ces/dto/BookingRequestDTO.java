@@ -21,6 +21,17 @@ public class BookingRequestDTO {
     @Size(min = 1, message = "At least one ticket must be provided")
     private List<TicketSelectionDTO> tickets;
 
+    @NotBlank(message = "userId is required")
+    private String userId;
+    
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
     public String getShowtimeId() {
         return showtimeId;
     }

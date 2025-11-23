@@ -14,20 +14,20 @@ public class Ticket {
     private int bookingId;
     private TicketType type;
     private double price;
-    private Seat seat;
+    private String seatNumber; // Only seatNumber as String - no Seat object
 
     // Default constructor
     public Ticket() {
     }
 
     // Convenience constructor (using enum)
-    public Ticket(int ticketId, int showtimeId, int bookingId, TicketType type, double price, Seat seat) {
+    public Ticket(int ticketId, int showtimeId, int bookingId, TicketType type, double price, String seatNumber) {
         this.ticketId = ticketId;
         this.showtimeId = showtimeId;
         this.bookingId = bookingId;
         this.type = type;
         this.price = price;
-        this.seat = seat;
+        this.seatNumber = seatNumber;
     }
 
     // Getters and setters
@@ -95,21 +95,28 @@ public class Ticket {
         this.price = price;
     }
 
-    public Seat getSeat() {
-        return seat;
-    }
-
-    public void setSeat(Seat seat) {
-        this.seat = seat;
-    }
-    
-    public void setSeat(int seatId, int row, String seatNumber) {
-        this.seat = new Seat(seatId, row, seatNumber);
-    }
-
-    // Convenience to get the seat number from the Seat object
+    // Simplified seat methods - only work with seatNumber string
     public String getSeatNumber() {
-        return seat != null ? seat.getSeatNumber() : null;
+        return seatNumber;
+    }
+
+    public void setSeatNumber(String seatNumber) {
+        this.seatNumber = seatNumber;
+    }
+
+    // Deprecated Seat object methods - keep for compatibility but don't use Seat objects
+    @Deprecated
+    public void setSeat(Seat seat) {
+        // Don't use Seat objects - extract seatNumber only if needed for compatibility
+        if (seat != null) {
+            this.seatNumber = seat.getSeatNumber();
+        }
+    }
+
+    @Deprecated
+    public Seat getSeat() {
+        // Return null to indicate we don't use Seat objects
+        return null;
     }
 
     @Override
@@ -121,7 +128,7 @@ public class Ticket {
                 ", bookingId=" + bookingId +
                 ", type=" + type +
                 ", price=" + price +
-                ", seat=" + seat +
+                ", seatNumber='" + seatNumber + '\'' +
                 '}';
     }
 }

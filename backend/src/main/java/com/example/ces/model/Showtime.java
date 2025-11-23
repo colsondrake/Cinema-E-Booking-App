@@ -20,7 +20,8 @@ public class Showtime {
     private int seatsBooked;
     private String time;
 
-    private List<Seat> seats = new ArrayList<>(); // your original seat objects
+    // Changed from List<Seat> to List<String> - all seats as seat numbers only
+    private List<String> seats = new ArrayList<>();
 
     private String showroomId; // REQUIRED for Sprint 3 scheduling
 
@@ -37,7 +38,7 @@ public class Showtime {
     }
 
     // ============================
-    // Seat booking logic (unchanged)
+    // Seat booking logic (updated for String seats)
     // ============================
 
     public synchronized boolean bookSeat(String seatNumber) {
@@ -47,17 +48,12 @@ public class Showtime {
         if (availableSeats <= 0)
             return false;
 
-        for (Seat seat : seats) {
-            String sNum = String.valueOf(seat.getSeatNumber());
-            if (Objects.equals(sNum, seatNumber)) {
-                if (Boolean.TRUE.equals(seat.isBooked())) {
-                    return false; // already booked
-                }
-                seat.setBooked(true);
-                seatsBooked++;
-                availableSeats = Math.max(0, availableSeats - 1);
-                return true;
-            }
+        // Check if seat exists and is not already taken
+        if (seats.contains(seatNumber) && !takenSeats.contains(seatNumber)) {
+            takenSeats.add(seatNumber);
+            seatsBooked++;
+            availableSeats = Math.max(0, availableSeats - 1);
+            return true;
         }
         return false;
     }
@@ -130,22 +126,24 @@ public class Showtime {
         this.time = time;
     }
 
-    public List<Seat> getSeats() {
+    // Updated to return List<String> instead of List<Seat>
+    public List<String> getSeats() {
         return seats;
     }
 
-    public void setSeats(List<Seat> seats) {
+    public void setSeats(List<String> seats) {
         this.seats = seats != null ? seats : new ArrayList<>();
-
+        // Update available seats count
         if (this.availableSeats <= 0) {
-            int unbooked = 0;
-            for (Seat s : this.seats) {
-                if (!Boolean.TRUE.equals(s.isBooked()))
-                    unbooked++;
-            }
-            this.availableSeats = unbooked;
-            this.seatsBooked = this.seats.size() - unbooked;
+            this.availableSeats = this.seats.size() - this.takenSeats.size();
+            this.seatsBooked = this.takenSeats.size();
         }
+    }
+
+    public void setSeatNumbers(List<String> seatNumbers) {
+        this.seats = seatNumbers != null ? seatNumbers : new ArrayList<>();
+        // Update available seats count
+        this.availableSeats = this.seats.size() - this.takenSeats.size();
     }
 
     public String getShowroomId() {
