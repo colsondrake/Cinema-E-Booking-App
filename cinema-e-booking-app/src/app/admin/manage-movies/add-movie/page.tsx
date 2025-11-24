@@ -198,7 +198,7 @@ export default function AddMoviePage() {
               <button
                 type="button"
                 onClick={addGenre}
-                className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-500"
+                className="cursor-pointer px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-500"
               >
                 Add
               </button>
@@ -292,14 +292,14 @@ export default function AddMoviePage() {
             <button
               type="submit"
               disabled={submitting}
-              className="px-6 py-2 rounded-md bg-blue-600 hover:bg-blue-500 disabled:opacity-60"
+              className="cursor-pointer px-6 py-2 rounded-md bg-blue-600 hover:bg-blue-500 disabled:opacity-60"
             >
               {submitting ? "Saving…" : "Save Movie"}
             </button>
             <button
               type="button"
               onClick={() => router.push("/admin/manage-movies")}
-              className="px-6 py-2 rounded-md bg-[#0b1727] border border-gray-700 hover:bg-[#0f1c30]"
+              className="cursor-pointer px-6 py-2 rounded-md bg-[#0b1727] border border-gray-700 hover:bg-[#0f1c30]"
             >
               Cancel
             </button>

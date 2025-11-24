@@ -27,8 +27,7 @@ type Movie = {
   status: string;
 };
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
 export default function ManageMoviesPage() {
   const { account } = useAccount();
@@ -75,7 +74,7 @@ export default function ManageMoviesPage() {
       <div className="w-full max-w-5xl bg-[#17233a] border border-[#1f2d49] rounded-2xl p-8 shadow-lg">
         
         {/* Header + Add Movie Button */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+        <div className="cursor-pointer flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold">Manage Movies</h1>
             <p className="text-gray-300 mt-2 text-sm md:text-base">
@@ -86,7 +85,7 @@ export default function ManageMoviesPage() {
           <button
             type="button"
             onClick={handleAddMovie}
-            className="px-5 py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-sm md:text-base"
+            className="cursor-pointer px-5 py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-sm md:text-base"
           >
             + Add Movie
           </button>
@@ -170,7 +169,7 @@ export default function ManageMoviesPage() {
                 <div className="flex items-start">
                 <button
                   onClick={() => router.push(`/admin/manage-movies/schedule/?movieId=${movie.id}`)}
-                  className="px-4 py-2 bg-[#111b2a] border border-gray-700 rounded-md text-sm hover:bg-[#0f1c30]"
+                  className="cursor-pointer px-4 py-2 bg-blue-600 hover:bg-blue-500 border border-gray-700 rounded-md text-sm hover:bg-[#0f1c30]"
                 >
                   Schedule
                 </button>
