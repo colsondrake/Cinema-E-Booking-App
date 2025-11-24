@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCheckout } from "@/context/CheckoutContext";
+import { useMovie } from "@/context/MovieContext";
 
 interface Showtime {
   showtimeId: string;
@@ -33,17 +33,16 @@ interface Movie {
 const MovieDetails = () => {
 
   const router = useRouter();
-  const { checkout, updateCheckoutField } = useCheckout();
-
-  const [movie, setMovie] = useState<Movie | null>(null);
+  
+  const { movie, setMovie, setShowtime } = useMovie();
   const [loading, setLoading] = useState(true);
 
-  // Format a showtime object into a user-friendly label
-  const formatShowtime = (st: Showtime) => {
-    // Robust formatting: join only defined parts, avoid rendering 'undefined' or blanks
-    const parts = [st.date, st.time].filter(Boolean);
-    return parts.join(" ");
-  };
+  // // Format a showtime object into a user-friendly label
+  // const formatShowtime = (st: Showtime) => {
+  //   // Robust formatting: join only defined parts, avoid rendering 'undefined' or blanks
+  //   const parts = [st.date, st.time].filter(Boolean);
+  //   return parts.join(" ");
+  // };
 
   useEffect(() => {
     /**
@@ -138,57 +137,30 @@ const MovieDetails = () => {
             <div className="mb-2 text-center">
               <span className="font-semibold">Showtimes: </span>
               <div className="flex flex-wrap gap-4 justify-center mt-3">
-                {movie.showtimes
-                  .filter((st) => st != null) // drop null/undefined entries to avoid rendering 'null'
-                  .map((showtime, idx) => {
-                    if (typeof showtime === "string") {
-                      const label = showtime.trim();
-                      if (!label) return null; // skip empty strings
-                      const key = `st-${idx}-${label}`;
-                      return (
-                        <button
-                          key={key}
-                          className="px-6 py-3 rounded-lg bg-blue-500 text-white text-lg font-semibold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer transition-all duration-150"
-                          onClick={() => {
-                            if (typeof window !== "undefined") {
-                              sessionStorage.setItem("selectedMovieId", movie.id);
-                              sessionStorage.setItem("selectedShowtime", label);
-                            }
-
-                            // updateCheckoutField("", )
-                            router.push("/booking");
-
-                          }}
-                        >
-                          {label}
-                        </button>
-                      );
-                    } else if (typeof showtime === "object") {
-                      const stObj = showtime as Showtime;
-                      const label = formatShowtime(stObj);
-                      if (!label) return null; // skip if label can't be formed
-                      const key = stObj.showtimeId || `st-${idx}-${label}`;
-                      return (
-                        <button
-                          key={key}
-                          className="px-6 py-3 rounded-lg bg-blue-500 text-white text-lg font-semibold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer transition-all duration-150"
-                          onClick={() => {
-                            if (typeof window !== "undefined") {
-                              sessionStorage.setItem("selectedMovieId", movie.id);
-                              sessionStorage.setItem("selectedShowtime", label);
-                            }
-
-                            // updateCheckoutField("", )
-                            router.push("/booking");
-
-                          }}
-                        >
-                          {label}
-                        </button>
-                      );
-                    }
-                    return null;
-                  })}
+                {movie.showtimes.map((showtime, idx) => {
+                  const isObj = typeof showtime === "object" && showtime !== null;
+                  const showtimeObj = isObj ? (showtime as Showtime) : null;
+                  // Generate a stable, unique key even if showtimeId is missing or showtime is a string
+                  const key = showtimeObj?.showtimeId
+                    || (showtimeObj ? `${showtimeObj.date || 'unknown'}-${showtimeObj.time || 'unknown'}-${idx}`
+                    : `raw-${idx}-${String(showtime)}`);
+                  const timeLabel = showtimeObj?.time || (typeof showtime === 'string' ? showtime : 'N/A');
+                  return (
+                    <button
+                      key={key}
+                      className="px-6 py-3 rounded-lg bg-blue-500 text-white text-lg font-semibold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer transition-all duration-150"
+                      onClick={() => {
+                        if (typeof window !== "undefined" && showtimeObj) {
+                          setMovie(movie);
+                          setShowtime(showtimeObj);
+                        }
+                        router.push("/booking");
+                      }}
+                    >
+                      {timeLabel}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>

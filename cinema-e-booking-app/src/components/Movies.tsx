@@ -8,31 +8,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-type Showtime = {
-  showtimeId?: string;
-  movieId?: string;
-  date?: string;
-  basePrice?: number;
-  time?: string;
-  seats?: any;
-  remainingSeats?: number;
-}
-
-// Movie type definition for type safety and clarity
-type Movie = {
-  id: string;
-  title: string;
-  director: string;
-  year: number;
-  genres: string[];
-  rating: string;
-  description: string;
-  posterUrl: string;
-  trailerUrl: string;
-  showtimes: Array<Showtime>;
-  status: string;
-};
+import { Movie } from "@/context/MovieContext";
 
 /**
  * Movies component

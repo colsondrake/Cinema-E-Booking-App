@@ -1,17 +1,22 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 export type Seat = {
   seatId: number;
+  row: number;
+  seatNumber: string;
+  isBooked: boolean;
+}
+export type Ticket = {
+  ticketType: string;
+  seatNumber: string;
 }
 
 export type Checkout = {
-  ticketId: number | null;
   showtimeId: number | null;
-  bookingId: number | null;
-  type: string | null;
-  price: number | null;
+  userId: string | null;
+  tickets: Ticket[] | null;
   seats: Seat[];
 }
 
@@ -26,11 +31,9 @@ const CheckoutContext = createContext<CheckoutContextType | undefined>(undefined
 export const CheckoutProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   
   const [checkout, setCheckout] = useState<Checkout>({
-    ticketId: null,
     showtimeId: null,
-    bookingId: null,
-    type: null,
-    price: null,
+    userId: null,
+    tickets: [],
     seats: [],
   });
 
@@ -41,6 +44,22 @@ export const CheckoutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   };
 
+  const submitCheckout = async (chk: Checkout): Promise<{ success: boolean; message?: string }> => {
+    // Map frontend Checkout to expected ____ DTO
+    try {
+      const payload: any = {
+
+      }
+
+
+
+
+      return { success: true };
+    } catch (e) {
+      console.warn("createAccount error", e);
+      return { success: false, message: String(e) };
+    }
+  }
 
   return (
     <CheckoutContext.Provider value={{ checkout, updateCheckoutField }}>

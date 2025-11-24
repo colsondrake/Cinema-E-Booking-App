@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { useCheckout } from '@/context/CheckoutContext';
+import type { Seat } from '@/context/CheckoutContext';
 
 const SeatSelection = () => {
     const { checkout, updateCheckoutField } = useCheckout();
@@ -19,18 +20,28 @@ const SeatSelection = () => {
     // Currently selected seat ids (derived from checkout).
     const selectedSeatIds = checkout?.seats ? checkout.seats.map(s => s.seatId) : [];
 
+    // Helper to build a full Seat object from an id.
+    const buildSeat = useCallback((id: number): Seat => {
+        const row = Math.floor((id - 1) / 10) + 1; // rows 1..10
+        const positionInRow = ((id - 1) % 10) + 1; // position 1..10
+        return {
+            seatId: id,
+            row,
+            seatNumber: `${row}-${positionInRow}`,
+            isBooked: false,
+        };
+    }, []);
+
     // Toggle seat selection if not taken.
-    const toggleSeat = useCallback(
-        (seatId: number) => {
-            if (!checkout || takenSeatSet.has(seatId)) return;
-            const isSelected = selectedSeatIds.includes(seatId);
-            const seats = isSelected
-                ? checkout.seats.filter(s => s.seatId !== seatId)
-                : [...checkout.seats, { seatId }];
-            updateCheckoutField('seats', seats);
-        },
-        [checkout, selectedSeatIds, updateCheckoutField, takenSeatSet]
-    );
+    const toggleSeat = useCallback((seatId: number) => {
+        if (!checkout || takenSeatSet.has(seatId)) return;
+        const isSelected = selectedSeatIds.includes(seatId);
+        const seats = isSelected
+            ? checkout.seats.filter(s => s.seatId !== seatId)
+            : [...checkout.seats, buildSeat(seatId)];
+
+        updateCheckoutField('seats', seats);
+    }, [checkout, selectedSeatIds, updateCheckoutField, takenSeatSet, buildSeat]);
 
     // Helper to build seat button.
     const renderSeat = (num: number) => {
@@ -57,6 +68,10 @@ const SeatSelection = () => {
         );
     };
 
+    const handleSubmit = () => {
+        
+    }
+
     if (!checkout) {
         return (
             <div className="p-4 text-sm text-gray-400 bg-[#17233a] rounded-md border border-gray-700">
@@ -67,7 +82,7 @@ const SeatSelection = () => {
 
     return (
         <div className="flex flex-col gap-6 bg-[#17233a] p-6 rounded-xl border border-[#17233a] shadow">
-            <h2 className="text-xl font-semibold text-center">Select Your Seats</h2>
+            <h2 className="text-xl font-semibold text-center">Select {checkout.tickets?.length} Seats</h2>
 
             {/* Screen */}
             <div className="flex flex-col items-center gap-1">
@@ -105,8 +120,18 @@ const SeatSelection = () => {
             </div>
 
             {checkout.seats.length > 0 && (
-                <div className="mt-2 text-sm text-center">
-                    Selected: <span className="text-blue-300">{checkout.seats.map(s => s.seatId).join(', ')}</span>
+                <div className="flex flex-row justify-between mt-2 text-lg font-bold text-center">
+                    <div className="flex flex-row gap-1">
+                        <p>Selected:</p>
+                        <span className="text-blue-300">{checkout.seats.map(s => s.seatId).join(', ')}</span>
+                    </div>
+                    <button
+                        className="px-8 py-3 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors duration-200 cursor-pointer"
+                        onClick={handleSubmit}
+                    >
+                        Checkout
+                    </button>
+
                 </div>
             )}
         </div>
