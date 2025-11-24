@@ -86,6 +86,54 @@ public class PromotionService {
     }
 
     // ============================================================
+    // 4. Update an existing promotion (Admin)
+    // ============================================================
+    public Promotion updatePromotion(String promotionId, Promotion updatedData) {
+
+        // Fetch existing promo
+        Promotion existing = promotionRepository.findById(promotionId)
+                .orElseThrow(() -> new IllegalArgumentException("Promotion not found."));
+
+        // --- VALIDATION ---
+
+        if (updatedData.getPromotionCode() == null || updatedData.getPromotionCode().isBlank()) {
+            throw new IllegalArgumentException("Promotion code is required.");
+        }
+
+        // If code changed, make sure it's unique
+        if (!existing.getPromotionCode().equals(updatedData.getPromotionCode())
+                && promotionRepository.existsByPromotionCode(updatedData.getPromotionCode())) {
+            throw new IllegalArgumentException("Promotion code already exists.");
+        }
+
+        if (updatedData.getDiscountPercent() <= 0 || updatedData.getDiscountPercent() > 100) {
+            throw new IllegalArgumentException("Discount percent must be between 1 and 100.");
+        }
+
+        LocalDate start = updatedData.getStartDate();
+        LocalDate end = updatedData.getEndDate();
+
+        if (start == null || end == null) {
+            throw new IllegalArgumentException("Start and end dates are required.");
+        }
+
+        if (end.isBefore(start)) {
+            throw new IllegalArgumentException("End date cannot be before start date.");
+        }
+
+        // --- UPDATE FIELDS ---
+        existing.setPromotionCode(updatedData.getPromotionCode());
+        existing.setDiscountPercent(updatedData.getDiscountPercent());
+        existing.setStartDate(updatedData.getStartDate());
+        existing.setEndDate(updatedData.getEndDate());
+        //existing.setStatus(updatedData.getStatus()); // NEW: status supported
+
+        // --- SAVE ---
+        return promotionRepository.save(existing);
+    }
+
+
+    // ============================================================
     // Helper to send email
     // ============================================================
     private void sendEmail(String to, Promotion promotion) {
