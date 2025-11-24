@@ -40,8 +40,8 @@
     <p>Base URL: <strong>http://localhost:8080</strong></p>
 
     <!-- ============================
-     ADD MOVIE
-=============================== -->
+         ADD MOVIE
+    =============================== -->
     <div class="box">
         <h2>Add Movie</h2>
         <input id="m_title" placeholder="Title"><br>
@@ -56,8 +56,8 @@
     </div>
 
     <!-- ============================
-     LIST MOVIES
-=============================== -->
+         LIST MOVIES
+    =============================== -->
     <div class="box">
         <h2>List Movies</h2>
         <button onclick="listMovies()">Load Movies</button>
@@ -65,8 +65,19 @@
     </div>
 
     <!-- ============================
-     ADD SHOWTIME
-=============================== -->
+         ⭐ NEW: GET MOVIE DETAIL
+         (To verify showtimes[] updates)
+    =============================== -->
+    <div class="box">
+        <h2>⭐ Get Movie Details (Check showtimes[])</h2>
+        <input id="md_movieId" placeholder="Movie ID"><br>
+        <button onclick="getMovieDetail()">Get Movie</button>
+        <pre id="movie_detail_output"></pre>
+    </div>
+
+    <!-- ============================
+         ADD SHOWTIME
+    =============================== -->
     <div class="box">
         <h2>Add Showtime</h2>
         <input id="s_movieId" placeholder="Movie ID"><br>
@@ -78,8 +89,8 @@
     </div>
 
     <!-- ============================
-     LIST SHOWTIMES BY MOVIE
-=============================== -->
+         LIST SHOWTIMES BY MOVIE
+    =============================== -->
     <div class="box">
         <h2>List Showtimes for Movie</h2>
         <input id="ls_movieId" placeholder="Movie ID"><br>
@@ -88,8 +99,8 @@
     </div>
 
     <!-- ============================
-     CREATE PROMOTION
-=============================== -->
+         CREATE PROMOTION
+    =============================== -->
     <div class="box">
         <h2>Create Promotion</h2>
         <input id="p_code" placeholder="Promo Code"><br>
@@ -101,8 +112,8 @@
     </div>
 
     <!-- ============================
-     LIST PROMOTIONS
-=============================== -->
+         LIST PROMOTIONS
+    =============================== -->
     <div class="box">
         <h2>List Promotions</h2>
         <button onclick="listPromotions()">Load Promotions</button>
@@ -110,8 +121,8 @@
     </div>
 
     <!-- ============================
-     SEND PROMOTION EMAILS
-=============================== -->
+         SEND PROMOTION EMAILS
+    =============================== -->
     <div class="box">
         <h2>Send Promotion</h2>
         <input id="sp_promoId" placeholder="Promotion ID"><br>
@@ -119,8 +130,8 @@
     </div>
 
     <!-- ============================
-     SEAT API TESTING
-=============================== -->
+         SEAT API TESTING
+    =============================== -->
     <div class="box">
         <h2>Seat API (User-Side Testing)</h2>
 
@@ -168,6 +179,15 @@
             fetch(`${BASE}/api/admin/movies`)
                 .then(r => r.json())
                 .then(data => movies_output.textContent = JSON.stringify(data, null, 2));
+        }
+
+        // ⭐ NEW — Get Movie Detail
+        function getMovieDetail() {
+            const id = md_movieId.value;
+
+            fetch(`${BASE}/api/movies/${id}`)
+                .then(r => r.json())
+                .then(data => movie_detail_output.textContent = JSON.stringify(data, null, 2));
         }
 
         // ----------------------
@@ -255,12 +275,12 @@
         // ----------------------
         function reserveSeats() {
             const id = reserve_showtimeId.value;
-            const seats = JSON.parse(reserve_seats.value);
+            const seats = JSON.parse(reserve_seats.value); // array only!
 
             fetch(`${BASE}/api/showtimes/${id}/reserve`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ seats })
+                body: JSON.stringify(seats)   // ← FIXED
             })
                 .then(r => r.text())
                 .then(alert);

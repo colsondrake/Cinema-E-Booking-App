@@ -8,9 +8,10 @@ import { useAccount } from "@/context/AccountContext";
 // === Movie types based on your Java model ===
 type Showtime = {
   id?: string;
-  date: string;
-  time: string;
-  auditorium: string;
+  movieId?: string;
+  showroomId?: string | null;
+  date?: string | null;
+  time?: string | null;
 };
 
 type Movie = {
@@ -23,7 +24,7 @@ type Movie = {
   description: string;
   posterUrl: string;
   trailerUrl: string;
-  showtimes: Showtime[];
+  showtimes?: Showtime[]; // optional for safety
   status: string;
 };
 
@@ -72,7 +73,6 @@ export default function ManageMoviesPage() {
   return (
     <section className="flex items-center justify-center min-h-screen bg-[#0b1727] text-white py-10 md:py-12">
       <div className="w-full max-w-5xl bg-[#17233a] border border-[#1f2d49] rounded-2xl p-8 shadow-lg">
-        
         {/* Header + Add Movie Button */}
         <div className="cursor-pointer flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
@@ -151,11 +151,18 @@ export default function ManageMoviesPage() {
                   </p>
 
                   {/* Showtimes */}
-                  {movie.showtimes?.length > 0 && (
+                  {movie.showtimes && movie.showtimes.length > 0 && (
                     <div className="mt-3 text-xs text-gray-400">
                       <span className="text-gray-300 font-medium">Showtimes:</span>{" "}
                       {movie.showtimes
-                        .map((s) => `${s.date} @ ${s.time} (${s.auditorium})`)
+                        // filter out broken/null ones from old data
+                        .filter((s) => s.date && s.time)
+                        .map(
+                          (s) =>
+                            `${s.date} @ ${s.time} (${
+                              s.showroomId ?? "?"
+                            })`
+                        )
                         .join(", ")}
                     </div>
                   )}
@@ -165,7 +172,7 @@ export default function ManageMoviesPage() {
                   </div>
                 </div>
 
-                {/* Placeholder for EDIT features */}
+                {/* Schedule button */}
                 <div className="flex items-start">
                 <button
                   onClick={() => router.push(`/admin/manage-movies/schedule/?movieId=${movie.id}`)}
