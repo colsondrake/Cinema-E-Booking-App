@@ -10,6 +10,10 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+
+
 @RestController
 @RequestMapping("/api/admin/showtimes")
 @CrossOrigin(origins = "*")
@@ -34,10 +38,17 @@ public class AdminShowtimeController {
             @RequestParam String time) {
 
         try {
+            DateTimeFormatter inputFmt = DateTimeFormatter.ofPattern("HH:mm");
+            DateTimeFormatter outputFmt = DateTimeFormatter.ofPattern("h:mm a");
+
+            LocalTime parsedTime = LocalTime.parse(time, inputFmt);
+            String formattedTime = parsedTime.format(outputFmt);
+
+            
             // Calls your updated scheduleShowtime() that now:
             // 1) saves to showtimes collection
             // 2) attaches showtime to Movie.showtimes[]
-            Showtime showtime = showtimeService.scheduleShowtime(movieId, showroomId, date, time);
+            Showtime showtime = showtimeService.scheduleShowtime(movieId, showroomId, date, formattedTime);
 
             return ResponseEntity.ok(showtime);
 
