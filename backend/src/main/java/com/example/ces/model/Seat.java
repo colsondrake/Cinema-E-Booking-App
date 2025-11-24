@@ -16,6 +16,12 @@ public class Seat {
     public Seat() {
     }
 
+    public Seat(int seatId, int row, String seatNumber) {
+        this.seatId = seatId;
+        this.row = row;
+        this.seatNumber = seatNumber;
+    }
+
     // Methods
     public boolean isBooked() {
         return isBooked;
@@ -39,5 +45,18 @@ public class Seat {
 
     public void setRow(int row) {
         this.row = row;
+    }
+
+    public int getSeatId() {
+        return seatId;
+    }
+
+    public void setSeatId(int seatId) {
+        this.seatId = seatId;
+    }   
+
+    // For convenience when using strings for seat numbers
+    public void setSeat(String seatNumber) {
+        this.seatNumber = seatNumber;
     }
 }

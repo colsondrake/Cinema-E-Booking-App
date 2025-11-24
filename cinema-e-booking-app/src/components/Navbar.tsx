@@ -32,11 +32,13 @@ const AuthNavMenu = () => {
 				</Link>
 				</>
 			)}
-			<Link href="/account">
-				<button className="border border-blue-600 bg-blue-600 text-white hover:bg-blue-500 py-1.5 px-4 rounded ml-2 cursor-pointer">
-					Account
-				</button>
-			</Link>
+			{account != null && (
+				<Link href="/account">
+					<button className="border border-blue-600 bg-blue-600 text-white hover:bg-blue-500 py-1.5 px-4 rounded ml-2 cursor-pointer">
+						Account
+					</button>
+				</Link>
+			)}
 
 			{/* Show Logout when an account is present */}
 			{account && (

@@ -11,12 +11,6 @@ export default function Home() {
         <p className="mb-8 text-lg text-gray-500 dark:text-gray-300 text-center max-w-xl">
         Check your email inbox and verify your account before logging in.
         </p>
-        <a
-        href="/login"
-        className="px-6 py-3 bg-gray-200 dark:bg-[#17233a] text-[#373572] dark:text-white rounded-md border border-gray-300 dark:border-gray-700 hover:bg-blue-600 hover:text-white transition-colors duration-200 cursor-pointer font-semibold"
-        >
-        Go to login
-        </a>
     </div>
     </section>
   );

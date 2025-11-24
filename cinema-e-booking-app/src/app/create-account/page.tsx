@@ -17,16 +17,8 @@ const SignupPage = () => {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  // Optional fields
-  const [hasCard, setHasCard] = useState(false);
-  const [cardHolder, setCardHolder] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvv, setCvv] = useState("");
-
-  const [billing, setBilling] = useState({ street: "", city: "", state: "", postalCode: "", country: "" });
-  const [home, setHome] = useState({ street: "", city: "", state: "", postalCode: "", country: "" });
+  const [subPromo, setSubPromo] = useState(false);
+  const [address, setAddress] = useState({ street: "", city: "", state: "", postalCode: "", country: "" });
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,33 +58,13 @@ const SignupPage = () => {
       lastName,
       email,
       password,
-      paymentCards: hasCard
-        ? [
-            {
-              id: genId(),
-              cardholderName: cardHolder || `${firstName} ${lastName}`,
-              cardNumber: cardNumber,
-              expiry: expiry,
-              cvv: cvv,
-            },
-          ]
-        : [],
-      billingAddress: billing.street || billing.city || billing.postalCode
+      address: address.street || address.city || address.postalCode
         ? {
-            street: billing.street,
-            city: billing.city,
-            state: billing.state,
-            postalCode: billing.postalCode,
-            country: billing.country,
-          }
-        : undefined,
-      homeAddress: home.street || home.city || home.postalCode
-        ? {
-            street: home.street,
-            city: home.city,
-            state: home.state,
-            postalCode: home.postalCode,
-            country: home.country,
+            street: address.street,
+            city: address.city,
+            state: address.state,
+            postalCode: address.postalCode,
+            country: address.country,
           }
         : undefined,
     };
@@ -155,59 +127,18 @@ const SignupPage = () => {
 
                   <div className="mt-6">
                     <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={hasCard} onChange={(e) => setHasCard(e.target.checked)} />
-                        <span className="cursor-pointer">Add payment card information (optional)</span>
+                        <input type="checkbox" checked={subPromo} onChange={(e) => setSubPromo(e.target.checked)} />
+                        <span className="cursor-pointer">Subscribe to promotions (optional)</span>
                     </label>
                   </div>
 
-                  {hasCard && (
-                    <div className="mt-4 bg-[#0a1420] p-4 rounded">
-                        <input
-                        value={cardHolder}
-                        onChange={(e) => setCardHolder(e.target.value)}
-                        placeholder="Cardholder name"
-                        className="w-full px-4 py-2 rounded-md bg-[#17233a] border border-gray-700 text-white mb-2"
-                        />
-                        <input
-                        value={cardNumber}
-                        onChange={(e) => setCardNumber(e.target.value.replace(/[^0-9 ]/g, ""))}
-                        placeholder="Card number"
-                        maxLength={19}
-                        className="w-full px-4 py-2 rounded-md bg-[#17233a] border border-gray-700 text-white mb-2"
-                        />
-                        <div className="flex gap-2">
-                          <input
-                              value={expiry}
-                              onChange={(e) => setExpiry(e.target.value)}
-                              placeholder="MM/YY"
-                              className="px-4 py-2 rounded-md bg-[#17233a] border border-gray-700 text-white w-1/2"
-                          />
-                          <input
-                              value={cvv}
-                              onChange={(e) => setCvv(e.target.value.replace(/\D/g, ""))}
-                              placeholder="CVV"
-                              maxLength={4}
-                              className="px-4 py-2 rounded-md bg-[#17233a] border border-gray-700 text-white w-1/2"
-                          />
-                        </div>
-                      </div>
-                    )
-                  }
-
                   {/* Optional addresses */}
-                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="mt-6 grid grid-cols-1 gap-4">
                     <div>
-                        <h4 className="mb-2">Billing Address (optional)</h4>
-                        <input value={billing.street} onChange={e => setBilling({ ...billing, street: e.target.value })} placeholder="Street" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2" />
-                        <input value={billing.city} onChange={e => setBilling({ ...billing, city: e.target.value })} placeholder="City" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2" />
-                        <input value={billing.postalCode} onChange={e => setBilling({ ...billing, postalCode: e.target.value })} placeholder="Postal code" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white" />
-                    </div>
-
-                    <div>
-                        <h4 className="mb-2">Home Address (optional)</h4>
-                        <input value={home.street} onChange={e => setHome({ ...home, street: e.target.value })} placeholder="Street" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2" />
-                        <input value={home.city} onChange={e => setHome({ ...home, city: e.target.value })} placeholder="City" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2" />
-                        <input value={home.postalCode} onChange={e => setHome({ ...home, postalCode: e.target.value })} placeholder="Postal code" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white" />
+                        <h4 className="mb-2">Address (optional)</h4>
+                        <input value={address.street} onChange={e => setAddress({ ...address, street: e.target.value })} placeholder="Street" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2" />
+                        <input value={address.city} onChange={e => setAddress({ ...address, city: e.target.value })} placeholder="City" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2" />
+                        <input value={address.postalCode} onChange={e => setAddress({ ...address, postalCode: e.target.value })} placeholder="Postal code" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white" />
                     </div>
                   </div>
 

@@ -35,7 +35,7 @@ public class User {
     @Field("emailVerified")
     private boolean emailVerified = false; // To track if the user has verified their email
     private boolean isActive = false; // Active/Inactive status
-    private String role; // "USER" or "ADMIN"
+    private String role; // "CUSTOMER" or "ADMIN"
     private LocalDateTime createdAt;
     private LocalDateTime lastModified;
     private String verificationToken;

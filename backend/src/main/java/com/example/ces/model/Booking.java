@@ -1,17 +1,20 @@
 package com.example.ces.model;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-// Booking class to represent a users booking
+@Document(collection = "bookings")
 public class Booking {
     @Id
-    private int bookingId;
+    private String id; // MongoDB auto-generated string ID
+    private int bookingId; // business logic ID
     private User user;
     private Showtime showtime;
     private LocalDate bookingDate;
-    private TicketTypePrice totalAmount;
+    private List<Ticket> tickets;
     private int numberOfTickets;
     private PaymentCard paymentCard;
     private Promotion promotion;
@@ -22,6 +25,14 @@ public class Booking {
     }
 
     // Getters and Setters
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public int getBookingId() {
         return bookingId;
     }
@@ -54,12 +65,12 @@ public class Booking {
         this.bookingDate = bookingDate;
     }
 
-    public TicketTypePrice getTotalAmount() {
-        return totalAmount;
+    public List<Ticket> getTickets() {
+        return tickets;
     }
 
-    public void setTotalAmount(TicketTypePrice totalAmount) {
-        this.totalAmount = totalAmount;
+    public void setTickets(List<Ticket> tickets) {
+        this.tickets = tickets;
     }
 
     public int getNumberOfTickets() {

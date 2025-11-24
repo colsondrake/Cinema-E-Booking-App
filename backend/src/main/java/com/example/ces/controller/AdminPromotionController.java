@@ -52,4 +52,16 @@ public class AdminPromotionController {
             return ResponseEntity.badRequest().body("Error: " + ex.getMessage());
         }
     }
+
+    // 4. Update existing promotion
+    @PutMapping("/{promotionId}")
+    public ResponseEntity<?> updatePromotion(@PathVariable String promotionId, @RequestBody Promotion promotion) {
+        try {
+            Promotion updated = promotionService.updatePromotion(promotionId, promotion);
+            return ResponseEntity.ok(updated);
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body("Error: " + ex.getMessage());
+        }
+}
+
 }

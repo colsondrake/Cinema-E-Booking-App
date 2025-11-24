@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.ces.service.EmailService;
+import com.example.ces.util.AESEncryptionService;
 
 import java.util.*;
 
@@ -18,13 +20,25 @@ public class UserService {
     private UserRepository userRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder; // ✅ inject BCryptPasswordEncoder
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private AESEncryptionService encryptionService;
+
+    @Autowired
+    private EmailService emailService;
 
     /**
      * Get user by ID
      */
     public Optional<User> getUserById(String id) {
         return userRepository.findById(id);
+    }
+
+    public User getUserByIdBooking(String id) {
+        return userRepository.findById(id)
+        .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        
     }
 
     /**
@@ -59,7 +73,23 @@ public class UserService {
             throw new IllegalArgumentException("Invalid email or password");
         }
 
+        // Mark user as logged in and persist (helps demo logout/session behavior)
+        try {
+            user.setIsLoggedIn(true);
+            userRepository.save(user);
+        } catch (Exception ignored) {}
+
         return user;
+    }
+
+    /**
+     * Logout user (clear logged-in flag)
+     */
+    public void logout(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setIsLoggedIn(false);
+        userRepository.save(user);
     }
 
     /**
@@ -101,11 +131,23 @@ public class UserService {
             if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
                 throw new IllegalArgumentException("Current password is incorrect");
             }
-            user.setPassword(passwordEncoder.encode(profileDTO.getNewPassword())); // ✅ hash new password
+            user.setPassword(passwordEncoder.encode(profileDTO.getNewPassword())); 
             profileChanged = true;
         }
 
-        return profileChanged ? userRepository.save(user) : user;
+        if (profileChanged) {
+            User saved = userRepository.save(user);
+            try {
+                // Send notification email about profile change (best-effort)
+                String userName = (saved.getFirstName() != null && !saved.getFirstName().isBlank()) ? saved.getFirstName() : saved.getFullName();
+                emailService.sendProfileChangeNotification(saved.getEmail(), userName, "profile updated");
+            } catch (Exception ignored) {
+                // Do not fail the operation if email sending fails
+            }
+            return saved;
+        }
+
+        return user;
     }
 
     /**
@@ -120,6 +162,27 @@ public class UserService {
         }
 
         card.setUserId(userId);
+
+        // Encrypt sensitive payment information before persisting
+        if (card.getCardNumber() != null && !card.getCardNumber().isEmpty()) {
+            // store encrypted full number
+            card.setEncryptedCardNumber(encryptionService.encrypt(card.getCardNumber()));
+            // ensure last four digits are set (PaymentCard#setCardNumber extracts these)
+            if (card.getLastFourDigits() == null || card.getLastFourDigits().isEmpty()) {
+                String cn = card.getCardNumber();
+                if (cn.length() >= 4) {
+                    card.setLastFourDigits(cn.substring(cn.length() - 4));
+                }
+            }
+            // Remove plain card number so it's not stored in cleartext
+            card.setCardNumber(null);
+        }
+
+        if (card.getCvv() != null && !card.getCvv().isEmpty()) {
+            card.setEncryptedCvv(encryptionService.encrypt(card.getCvv()));
+            // remove plaintext
+            card.setCvv(null);
+        }
 
         if (card.getId() == null) {
             card.setId(UUID.randomUUID().toString());
@@ -142,7 +205,7 @@ public class UserService {
             throw new IllegalArgumentException("Current password is incorrect");
         }
 
-        user.setPassword(passwordEncoder.encode(newPassword)); // ✅ hashed
+        user.setPassword(passwordEncoder.encode(newPassword));  
         userRepository.save(user);
     }
 
@@ -165,7 +228,7 @@ public class UserService {
         user.setFirstName(dto.getFirstName());
         user.setLastName(dto.getLastName());
         user.setEmail(dto.getEmail());
-        user.setPassword(passwordEncoder.encode(dto.getPassword())); // ✅ hash before save
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setPhone(dto.getPhone());
         user.setIsActive(false); // require email verification flow
         user.setEmailVerified(false);
@@ -176,5 +239,15 @@ public class UserService {
         }
 
         return userRepository.save(user);
+    }
+
+    public boolean emailExists(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    public boolean isEmailVerified(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return user.isEmailVerified();
     }
 }

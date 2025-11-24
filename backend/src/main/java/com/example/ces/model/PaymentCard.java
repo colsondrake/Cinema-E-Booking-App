@@ -94,7 +94,10 @@ public class PaymentCard {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String cardNumber;
     
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private String encryptedCardNumber; // Store encrypted version
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private String encryptedCvv; // Store encrypted CVV
     private String lastFourDigits; // Store last 4 digits for display
     
     private String cardType;
@@ -164,6 +167,14 @@ public class PaymentCard {
 
     public void setEncryptedCardNumber(String encryptedCardNumber) {
         this.encryptedCardNumber = encryptedCardNumber;
+    }
+
+    public String getEncryptedCvv() {
+        return encryptedCvv;
+    }
+
+    public void setEncryptedCvv(String encryptedCvv) {
+        this.encryptedCvv = encryptedCvv;
     }
 
     public String getLastFourDigits() {
