@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>CES Admin API Tester</title>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+        }
+
+        input,
+        select {
+            margin: 5px;
+            padding: 5px;
+        }
+
+        button {
+            padding: 7px 12px;
+            margin-top: 5px;
+        }
+
+        .box {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        pre {
+            background: #f9f9f9;
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>CES Admin API Tester</h1>
+    <p>Base URL: <strong>http://localhost:8080</strong></p>
+
+    <!-- ============================
+     ADD MOVIE
+=============================== -->
+    <div class="box">
+        <h2>Add Movie</h2>
+        <input id="m_title" placeholder="Title"><br>
+        <input id="m_director" placeholder="Director"><br>
+        <input id="m_year" placeholder="Year" type="number"><br>
+        <input id="m_rating" placeholder="Rating (PG, R, etc.)"><br>
+        <input id="m_poster" placeholder="Poster URL"><br>
+        <input id="m_trailer" placeholder="Trailer URL"><br>
+        <input id="m_description" placeholder="Description"><br>
+
+        <button onclick="addMovie()">Add Movie</button>
+    </div>
+
+    <!-- ============================
+     LIST MOVIES
+=============================== -->
+    <div class="box">
+        <h2>List Movies</h2>
+        <button onclick="listMovies()">Load Movies</button>
+        <pre id="movies_output"></pre>
+    </div>
+
+    <!-- ============================
+     ADD SHOWTIME
+=============================== -->
+    <div class="box">
+        <h2>Add Showtime</h2>
+        <input id="s_movieId" placeholder="Movie ID"><br>
+        <input id="s_showroomId" placeholder="Showroom ID"><br>
+        <input id="s_date" type="date"><br>
+        <input id="s_time" type="text" placeholder="Time (e.g. 18:00)"><br>
+
+        <button onclick="addShowtime()">Add Showtime</button>
+    </div>
+
+    <!-- ============================
+     LIST SHOWTIMES BY MOVIE
+=============================== -->
+    <div class="box">
+        <h2>List Showtimes for Movie</h2>
+        <input id="ls_movieId" placeholder="Movie ID"><br>
+        <button onclick="listShowtimes()">Load Showtimes</button>
+        <pre id="showtimes_output"></pre>
+    </div>
+
+    <!-- ============================
+     CREATE PROMOTION
+=============================== -->
+    <div class="box">
+        <h2>Create Promotion</h2>
+        <input id="p_code" placeholder="Promo Code"><br>
+        <input id="p_discount" placeholder="Discount %" type="number"><br>
+        <input id="p_start" type="date"><br>
+        <input id="p_end" type="date"><br>
+
+        <button onclick="createPromotion()">Create Promotion</button>
+    </div>
+
+    <!-- ============================
+     LIST PROMOTIONS
+=============================== -->
+    <div class="box">
+        <h2>List Promotions</h2>
+        <button onclick="listPromotions()">Load Promotions</button>
+        <pre id="promotions_output"></pre>
+    </div>
+
+    <!-- ============================
+     SEND PROMOTION EMAILS
+=============================== -->
+    <div class="box">
+        <h2>Send Promotion</h2>
+        <input id="sp_promoId" placeholder="Promotion ID"><br>
+        <button onclick="sendPromotion()">Send Emails</button>
+    </div>
+
+    <!-- ============================
+     SEAT API TESTING
+=============================== -->
+    <div class="box">
+        <h2>Seat API (User-Side Testing)</h2>
+
+        <h3>Get Taken Seats</h3>
+        <input id="seat_showtimeId" placeholder="Showtime ID"><br>
+        <button onclick="getTakenSeats()">Get Taken Seats</button>
+        <pre id="taken_output"></pre>
+
+        <h3>Reserve Seats</h3>
+        <input id="reserve_showtimeId" placeholder="Showtime ID"><br>
+        <input id="reserve_seats" placeholder='Seats (e.g. ["A1","A2"])'><br>
+        <button onclick="reserveSeats()">Reserve</button>
+    </div>
+
+    <script>
+        const BASE = "http://localhost:8080";
+
+        // ----------------------
+        // ADD MOVIE
+        // ----------------------
+        function addMovie() {
+            const body = {
+                title: m_title.value,
+                director: m_director.value,
+                year: parseInt(m_year.value),
+                rating: m_rating.value,
+                posterUrl: m_poster.value,
+                trailerUrl: m_trailer.value,
+                description: m_description.value
+            };
+
+            fetch(`${BASE}/api/admin/movies`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            })
+                .then(r => r.text())
+                .then(alert);
+        }
+
+        // ----------------------
+        // LIST MOVIES
+        // ----------------------
+        function listMovies() {
+            fetch(`${BASE}/api/admin/movies`)
+                .then(r => r.json())
+                .then(data => movies_output.textContent = JSON.stringify(data, null, 2));
+        }
+
+        // ----------------------
+        // ADD SHOWTIME
+        // ----------------------
+        function addShowtime() {
+            const movieId = s_movieId.value;
+            const showroomId = s_showroomId.value;
+            const date = s_date.value;
+            const time = s_time.value;
+
+            fetch(`${BASE}/api/admin/showtimes?movieId=${movieId}&showroomId=${showroomId}&date=${date}&time=${time}`, {
+                method: "POST"
+            })
+                .then(r => r.text())
+                .then(alert);
+        }
+
+        // ----------------------
+        // LIST SHOWTIMES
+        // ----------------------
+        function listShowtimes() {
+            const movieId = ls_movieId.value;
+
+            fetch(`${BASE}/api/admin/showtimes?movieId=${movieId}`)
+                .then(r => r.json())
+                .then(data => showtimes_output.textContent = JSON.stringify(data, null, 2));
+        }
+
+        // ----------------------
+        // CREATE PROMOTION
+        // ----------------------
+        function createPromotion() {
+            const body = {
+                promotionCode: p_code.value,
+                discountPercent: parseFloat(p_discount.value),
+                startDate: p_start.value,
+                endDate: p_end.value
+            };
+
+            fetch(`${BASE}/api/admin/promotions`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            })
+                .then(r => r.text())
+                .then(alert);
+        }
+
+        // ----------------------
+        // LIST PROMOTIONS
+        // ----------------------
+        function listPromotions() {
+            fetch(`${BASE}/api/admin/promotions`)
+                .then(r => r.json())
+                .then(data => promotions_output.textContent = JSON.stringify(data, null, 2));
+        }
+
+        // ----------------------
+        // SEND PROMOTION EMAIL
+        // ----------------------
+        function sendPromotion() {
+            const promoId = sp_promoId.value;
+
+            fetch(`${BASE}/api/admin/promotions/${promoId}/send`, {
+                method: "POST"
+            })
+                .then(r => r.text())
+                .then(alert);
+        }
+
+        // ----------------------
+        // GET TAKEN SEATS
+        // ----------------------
+        function getTakenSeats() {
+            const id = seat_showtimeId.value;
+
+            fetch(`${BASE}/api/showtimes/${id}/seats`)
+                .then(r => r.json())
+                .then(data => taken_output.textContent = JSON.stringify(data, null, 2));
+        }
+
+        // ----------------------
+        // RESERVE SEATS
+        // ----------------------
+        function reserveSeats() {
+            const id = reserve_showtimeId.value;
+            const seats = JSON.parse(reserve_seats.value);
+
+            fetch(`${BASE}/api/showtimes/${id}/reserve`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ seats })
+            })
+                .then(r => r.text())
+                .then(alert);
+        }
+    </script>
+
+</body>
+
+</html>

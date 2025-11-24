@@ -7,42 +7,23 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "promotions")
 public class Promotion {
-    // Define fields
+
     @Id
-    private int promotionId;
+    private String promotionId; // MUST be String for Mongo
+
     private String promotionCode;
     private double discountPercent;
     private LocalDate startDate;
-    private LocalDate endDate; 
-    private PromotionStatus status;
+    private LocalDate endDate;
 
-    // Default constructor
-    public Promotion() {}
-
-    // Convenience constructor
-    public Promotion(int promotionId, String promotionCode, double discountPercent,
-                     LocalDate startDate, LocalDate endDate, PromotionStatus status) {
-        this.promotionId = promotionId;
-        this.promotionCode = promotionCode;
-        this.discountPercent = discountPercent;
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.status = status;
+    public Promotion() {
     }
 
-    // Convenience constructor accepting String for status
-    public Promotion(int promotionId, String promotionCode, double discountPercent,
-                     LocalDate startDate, LocalDate endDate, String status) {
-        this(promotionId, promotionCode, discountPercent, startDate, endDate, (PromotionStatus) null);
-        setStatus(status);
-    }
-
-    // Getters and setters
-    public int getPromotionId() {
+    public String getPromotionId() {
         return promotionId;
     }
 
-    public void setPromotionId(int promotionId) {
+    public void setPromotionId(String promotionId) {
         this.promotionId = promotionId;
     }
 
@@ -76,29 +57,5 @@ public class Promotion {
 
     public void setEndDate(LocalDate endDate) {
         this.endDate = endDate;
-    }
-
-    public PromotionStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(PromotionStatus status) {
-        this.status = status;
-    }
-
-    // Convenience setter that accepts a String and maps it to the enum (case-insensitive)
-    public void setStatus(String status) {
-        if (status == null) {
-            this.status = null;
-            return;
-        }
-        String s = status.trim();
-        for (PromotionStatus ps : PromotionStatus.values()) {
-            if (ps.name().equalsIgnoreCase(s)) {
-                this.status = ps;
-                return;
-            }
-        }
-        this.status = null; // or set a default like PromotionStatus.Inactive
     }
 }
