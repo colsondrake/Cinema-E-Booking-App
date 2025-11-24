@@ -60,7 +60,7 @@ export default function ManageMoviesPage() {
   }, []);
 
   const handleAddMovie = () => {
-    router.push("/admin/movies/new");
+    router.push("/admin/manage-movies/add-movie");
   };
 
   return (

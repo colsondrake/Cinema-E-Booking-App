@@ -95,9 +95,9 @@ const AuthNavMenu = () => {
 
 const Navbar = () => {
 	return (
-		<div className="py-6 bg-white dark:bg-[#0b1727] text-zinc-900 dark:text-white sticky top-0 z-50 shadow-md">
-			<div className="flex flex-col items-center justify-center w-full">
-				<Link className="font-black text-3xl mb-4" href="/">
+		<div className="py-6 bg-[#09121F] text-white sticky top-0 z-50 shadow-lg border-b-3 border-gray-900">
+			<div className="flex flex-row items-center justify-center w-full">
+				<Link className="font-black text-4xl" href="/">
 					CINEMAGIC
 				</Link>
 				<AuthNavMenu />
