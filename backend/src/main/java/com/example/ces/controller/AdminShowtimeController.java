@@ -34,8 +34,13 @@ public class AdminShowtimeController {
             @RequestParam String time) {
 
         try {
+            // Calls your updated scheduleShowtime() that now:
+            // 1) saves to showtimes collection
+            // 2) attaches showtime to Movie.showtimes[]
             Showtime showtime = showtimeService.scheduleShowtime(movieId, showroomId, date, time);
+
             return ResponseEntity.ok(showtime);
+
         } catch (IllegalStateException ex) {
             return ResponseEntity.badRequest().body("Scheduling conflict: " + ex.getMessage());
         } catch (Exception ex) {

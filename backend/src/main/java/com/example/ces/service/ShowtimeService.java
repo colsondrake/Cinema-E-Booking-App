@@ -1,20 +1,26 @@
 package com.example.ces.service;
 
+import com.example.ces.model.Movie;
 import com.example.ces.model.Showtime;
+import com.example.ces.repository.MovieRepository;
 import com.example.ces.repository.ShowtimeRepository;
 
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class ShowtimeService {
 
     private final ShowtimeRepository showtimeRepository;
+    private final MovieRepository movieRepository;
 
-    public ShowtimeService(ShowtimeRepository showtimeRepository) {
+    public ShowtimeService(ShowtimeRepository showtimeRepository,
+            MovieRepository movieRepository) {
         this.showtimeRepository = showtimeRepository;
+        this.movieRepository = movieRepository;
     }
 
     // ============================
@@ -35,12 +41,27 @@ public class ShowtimeService {
         showtime.setDate(date);
         showtime.setTime(time);
 
-        // You may initialize availableSeats, seats list, etc. here if needed
         if (showtime.getSeats() != null) {
             showtime.setAvailableSeats(showtime.getSeats().size());
         }
 
-        return showtimeRepository.save(showtime);
+        // 1) Save the showtime to the showtimes collection
+        Showtime savedShowtime = showtimeRepository.save(showtime);
+
+        // 2) ALSO attach this showtime to the Movie's internal showtimes list
+        Movie movie = movieRepository.findById(movieId)
+                .orElseThrow(() -> new IllegalArgumentException("Movie not found"));
+
+        if (movie.getShowtimes() == null) {
+            movie.setShowtimes(new ArrayList<>());
+        }
+
+        movie.getShowtimes().add(savedShowtime);
+
+        // 3) Save the updated movie document
+        movieRepository.save(movie);
+
+        return savedShowtime;
     }
 
     // ============================
