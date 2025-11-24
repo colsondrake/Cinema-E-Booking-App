@@ -4,6 +4,14 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 // ---- Types ----
+export type Showtime = {
+  id: string;
+  movieId: string;
+  showroomId: string;
+  date: string; // yyyy-mm-dd
+  time: string; // HH:mm
+};
+
 export type Movie = {
   id: string;
   title: string;
@@ -11,19 +19,12 @@ export type Movie = {
   rating?: string;
   posterUrl?: string;
   description?: string;
+  showtimes?: Showtime[]; // embedded showtimes from backend
 };
 
 export type Showroom = {
   id: string; // e.g., "SR-1"
   name: string; // display name
-};
-
-export type Showtime = {
-  id: string;
-  movieId: string;
-  showroomId: string;
-  date: string; // yyyy-mm-dd
-  time: string; // HH:mm
 };
 
 // ---- Constants ----
@@ -46,9 +47,8 @@ export default function ScheduleMoviePage() {
   const [loadingMovie, setLoadingMovie] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  // --- Showtimes for this movie ---
+  // --- Showtimes for this movie (we'll pull from movie.showtimes) ---
   const [showtimes, setShowtimes] = useState<Showtime[]>([]);
-  const [loadingShowtimes, setLoadingShowtimes] = useState(false);
 
   // --- Form state ---
   const [showroomId, setShowroomId] = useState<string>(SHOWROOMS[0]?.id ?? "");
@@ -65,7 +65,7 @@ export default function ScheduleMoviePage() {
     return "Schedule Movie";
   }, [movie, loadingMovie]);
 
-  // ---- Load movie details ----
+  // ---- Load movie details (and its embedded showtimes) ----
   useEffect(() => {
     if (!movieId) {
       setLoadError("No movie selected.");
@@ -79,8 +79,12 @@ export default function ScheduleMoviePage() {
       try {
         const res = await fetch(`${API_BASE}/api/movies/${movieId}`);
         if (!res.ok) throw new Error("Failed to load movie");
-        const data = await res.json();
-        if (!ignore) setMovie(data);
+        const data: Movie = await res.json();
+
+        if (!ignore) {
+          setMovie(data);
+          setShowtimes(data.showtimes ?? []); // ✅ use movie.showtimes here
+        }
       } catch (e: any) {
         if (!ignore) setLoadError(e?.message || "Failed to load movie");
       } finally {
@@ -88,34 +92,6 @@ export default function ScheduleMoviePage() {
       }
     };
     load();
-    return () => {
-      ignore = true;
-    };
-  }, [movieId]);
-
-  // ---- Load existing showtimes for this movie ----
-  useEffect(() => {
-    if (!movieId) return;
-
-    let ignore = false;
-    const loadShowtimes = async () => {
-      setLoadingShowtimes(true);
-      try {
-        const res = await fetch(
-          `${API_BASE}/api/admin/showtimes?movieId=${encodeURIComponent(
-            movieId
-          )}`
-        );
-        if (!res.ok) throw new Error("Failed to load showtimes");
-        const data: Showtime[] = await res.json();
-        if (!ignore) setShowtimes(data);
-      } catch (e: any) {
-        if (!ignore) setError(e?.message || "Failed to load showtimes");
-      } finally {
-        if (!ignore) setLoadingShowtimes(false);
-      }
-    };
-    loadShowtimes();
     return () => {
       ignore = true;
     };
@@ -155,7 +131,7 @@ export default function ScheduleMoviePage() {
 
       const saved: Showtime = await res.json();
 
-      // Add new showtime to list
+      // Add new showtime to local list so UI updates immediately
       setShowtimes((prev) => [...prev, saved]);
 
       // Reset form fields
@@ -236,9 +212,7 @@ export default function ScheduleMoviePage() {
                 </button>
               </div>
 
-              {loadingShowtimes ? (
-                <p className="text-sm text-gray-300">Loading showtimes…</p>
-              ) : showtimes.length === 0 ? (
+              {showtimes.length === 0 ? (
                 <p className="text-sm text-gray-400">
                   No showtimes scheduled yet for this movie.
                 </p>
@@ -266,7 +240,10 @@ export default function ScheduleMoviePage() {
 
             {/* Add showtime form (toggle) */}
             {showForm && (
-              <form onSubmit={handleSubmit} className="mt-4 border-t border-gray-700 pt-4">
+              <form
+                onSubmit={handleSubmit}
+                className="mt-4 border-t border-gray-700 pt-4"
+              >
                 <h3 className="text-lg font-semibold mb-4">New Showtime</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
@@ -352,4 +329,3 @@ export default function ScheduleMoviePage() {
     </section>
   );
 }
-
