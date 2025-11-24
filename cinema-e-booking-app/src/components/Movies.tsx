@@ -93,7 +93,7 @@ const Movies = () => {
 
   // Loading and error states
   // if (loading) return <div className="text-center mt-10 text-lg">Loading movies...</div>;
-  if (error) return <div className="text-center mt-10 text-red-500">Error: {error}</div>;
+  // if (error) return <div className="text-center mt-10 text-red-500">Error: {error}</div>;
 
   // List of available genres for filtering
   const GENRES = [

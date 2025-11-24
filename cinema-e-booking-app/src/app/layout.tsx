@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AccountProvider } from "../context/AccountContext";
+import { CheckoutProvider } from "../context/CheckoutContext";
+import Navbar from "@/components/Navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +32,10 @@ export default function RootLayout({
       >
         {/* Wrap the entire app with AccountProvider so all pages/components can access account state */}
         <AccountProvider>
-          {children}
+          <CheckoutProvider>
+            <Navbar />
+            {children}
+          </CheckoutProvider>
         </AccountProvider>
       </body>
     </html>

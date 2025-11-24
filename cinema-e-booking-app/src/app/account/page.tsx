@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount, PaymentCard } from "../../context/AccountContext";
-import NavBar from "@/components/Navbar";
 import AccountNavbar from "@/components/AccountNavbar";
 
 const genId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,9)}`;
@@ -22,7 +21,6 @@ const AccountPage = () => {
   if (!account) {
     return (
         <>
-            <NavBar />
             <section className="py-14 md:py-24 bg-[#0b1727] text-white min-h-screen">
                 <div className="container px-4 mx-auto text-center">
                     <p className="mb-4">No account signed in.</p>
@@ -86,7 +84,6 @@ const AccountPage = () => {
 
   return (
     <>
-        <NavBar />
         <section className="py-14 md:py-24 bg-[#0b1727] text-white min-h-screen">
         <div className="container px-4 mx-auto">
             <div className="grid grid-cols-14 justify-center mb-6 md:mb-12">

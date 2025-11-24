@@ -1,14 +1,10 @@
-
 'use client'
 
 
-// Import React and necessary hooks
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCheckout } from "@/context/CheckoutContext";
 
-
-/**
- * Movie interface defines the structure of a movie object
- */
 interface Showtime {
   showtimeId: string;
   movieId: string;
@@ -34,14 +30,12 @@ interface Movie {
 }
 
 
-/**
- * MovieDetails component fetches and displays detailed information about a selected movie.
- * It retrieves the movie ID from sessionStorage and fetches movie data from the backend API.
- */
 const MovieDetails = () => {
-  // State to hold the movie object
+
+  const router = useRouter();
+  const { checkout, updateCheckoutField } = useCheckout();
+
   const [movie, setMovie] = useState<Movie | null>(null);
-  // State to manage loading status
   const [loading, setLoading] = useState(true);
 
   // Format a showtime object into a user-friendly label
@@ -160,7 +154,10 @@ const MovieDetails = () => {
                               sessionStorage.setItem("selectedMovieId", movie.id);
                               sessionStorage.setItem("selectedShowtime", label);
                             }
-                            window.location.href = "/booking";
+
+                            // updateCheckoutField("", )
+                            router.push("/booking");
+
                           }}
                         >
                           {label}
@@ -180,7 +177,10 @@ const MovieDetails = () => {
                               sessionStorage.setItem("selectedMovieId", movie.id);
                               sessionStorage.setItem("selectedShowtime", label);
                             }
-                            window.location.href = "/booking";
+
+                            // updateCheckoutField("", )
+                            router.push("/booking");
+
                           }}
                         >
                           {label}

@@ -1,8 +1,5 @@
 'use client';
 
-import NotFound from "@/components/NotFound"
-import Navbar from "@/components/Navbar"
-
 export default function Home() {
   return (
     <section className="py-14 md:py-24 bg-white dark:bg-[#0b1727] text-[#373572] dark:text-white min-h-screen flex items-center justify-center">

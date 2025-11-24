@@ -7,7 +7,6 @@
  * Fetches movie details from backend and manages booking state.
  */
 
-import Navbar from "@/components/Navbar";
 import { useEffect, useState } from "react";
 
 /**
@@ -32,12 +31,9 @@ interface Movie {
  * Price fields are commented out for future use.
  */
 const TICKET_TYPES = [
-    // { label: "Adult", value: "adult", price: 12 },
-    // { label: "Child", value: "child", price: 8 },
-    // { label: "Senior", value: "senior", price: 9 },
-    { label: "Adult", value: "adult" },
-    { label: "Child", value: "child" },
-    { label: "Senior", value: "senior" },
+    { label: "Adult", value: "adult", price: 12 },
+    { label: "Child", value: "child", price: 8 },
+    { label: "Senior", value: "senior", price: 9 },
 ];
 
 /**
@@ -98,9 +94,8 @@ const Booking = () => {
         const foodPrice = FOOD_OPTIONS.find(f => f.value === food)?.price || 0;
         return sum + foodPrice * qty;
     }, 0);
-    // Uncomment below to include ticket price in total calculation
-    // const ticketPrice = TICKET_TYPES.find(t => t.value === ticketType)?.price || 0;
-    // const total = ticketPrice * ticketQty + foodTotal;
+    const ticketPrice = TICKET_TYPES.find(t => t.value === ticketType)?.price || 0;
+    const total = ticketPrice * ticketQty + foodTotal;
 
     /**
      * Handles change in food selection quantity.
@@ -123,39 +118,29 @@ const Booking = () => {
     return (
         <>
             {/* Navigation bar */}
-            <Navbar />
-            <section className="py-14 md:py-24 bg-white dark:bg-[#0b1727] text-zinc-900 dark:text-white min-h-screen flex items-center justify-center">
-                <div className="w-full max-w-2xl mx-auto bg-white dark:bg-[#17233a] rounded-xl shadow-lg p-8">
+                <div className="w-full max-w-2xl bg-[#17233a] rounded-xl shadow-lg p-8">
                     {/* Booking header */}
-                    <h2 className="text-2xl font-bold mb-6 text-center text-blue-700 dark:text-blue-300">Book Your Tickets</h2>
+                    <h2 className="text-2xl font-bold mb-6 text-center text-blue-300">Book Your Tickets</h2>
                     {/* Show booking form if movie and showtime are selected */}
                     {movie && showtime ? (
                         <>
                             {/* Movie details section */}
                             <div className="flex flex-col md:flex-row gap-6 mb-8 items-center justify-center">
-                                {/* <img src={movie.posterUrl} alt={movie.title} className="w-40 h-40 object-cover rounded-lg shadow" /> */}
+                                <img src={movie.posterUrl} alt={movie.title} className="w-40 h-40 object-cover rounded-lg shadow" />
                                 <div className="text-center md:text-left">
                                     <h3 className="text-xl font-semibold mb-1">{movie.title} ({movie.year})</h3>
-                                    {/* <p className="mb-1 text-gray-600 dark:text-gray-300">Directed by: {movie.director}</p>
+                                    <p className="mb-1 text-gray-600 dark:text-gray-300">Directed by: {movie.director}</p>
                                     <p className="mb-2 text-gray-700 dark:text-gray-200">{movie.description}</p>
                                     <div className="mb-1">
-                                        <span className="font-semibold">Genre:</span> {movie.genre}
-                                    </div> */}
-                                    <div className="mb-1">
-                                        <span className="font-semibold">Showtime: </span>
-                                        <span className="inline-block px-3 py-1 rounded bg-blue-500 text-white text-xs">{showtime}</span>
+                                        <span className="font-semibold">Showtime: {showtime}</span>
                                     </div>
-                                    {/* <div>
+                                    <div>
                                         <span className="font-semibold">Rating:</span> {movie.rating}
-                                    </div> */}
+                                    </div>
                                 </div>
                             </div>
                             {/* Show confirmation message after submission */}
                             {submitted ? (
-                                // <div className="text-center text-green-600 text-lg font-semibold py-8">
-                                //     Thank you for your booking, {name || "Guest"}!<br />
-                                //     A confirmation has been sent to {email || "your email"}.
-                                // </div>
                                 <div className="text-center text-green-600 text-lg font-semibold py-8">
                                     Thank you for your booking, {name || "Guest"}!<br />
                                 </div>
@@ -195,12 +180,8 @@ const Booking = () => {
                                                 value={ticketType}
                                                 onChange={e => setTicketType(e.target.value)}
                                             >
-                                                {/* Uncomment below to show price in dropdown */}
-                                                {/* {TICKET_TYPES.map(t => (
-                                                    <option key={t.value} value={t.value}>{t.label} (${t.price})</option>
-                                                ))} */}
                                                 {TICKET_TYPES.map(t => (
-                                                    <option key={t.value} value={t.value}>{t.label}</option>
+                                                    <option key={t.value} value={t.value}>{t.label} (${t.price})</option>
                                                 ))}
                                             </select>
                                         </div>
@@ -224,9 +205,7 @@ const Booking = () => {
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             {FOOD_OPTIONS.map(food => (
                                                 <div key={food.value} className="flex flex-col items-center">
-                                                    {/* Uncomment below to show price next to food label */}
-                                                    {/* <span className="mb-1">{food.label} (${food.price})</span> */}
-                                                    <span className="mb-1">{food.label}</span>
+                                                    <span className="mb-1">{food.label} (${food.price})</span>
                                                     <input
                                                         type="number"
                                                         min={0}
@@ -242,8 +221,7 @@ const Booking = () => {
                                     {/* Total and submit button section */}
                                     <div className="flex flex-col md:flex-row md:justify-between items-center gap-4 border-t border-gray-200 dark:border-gray-700 pt-4">
                                         <div className="text-lg font-semibold text-blue-700 dark:text-blue-300">
-                                            {/* Uncomment below to show total cost */}
-                                            {/* Total: <span className="text-2xl">${total}</span> */}
+                                            Total: <span className="text-2xl">${total}</span>
                                         </div>
                                         <button
                                             type="submit"
@@ -260,7 +238,6 @@ const Booking = () => {
                         <div className="text-center text-lg text-gray-500">No movie or showtime selected. Please select a movie and showtime first.</div>
                     )}
                 </div>
-            </section>
         </>
     );
 }

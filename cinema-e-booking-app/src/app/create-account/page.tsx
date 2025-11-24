@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 // lightweight id generator to avoid extra dependency
 const genId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,9)}`;
 import { useAccount } from "../../context/AccountContext";
-import NavBar from "@/components/Navbar";
 
 // Signup page: create account form
 const SignupPage = () => {
@@ -82,7 +81,6 @@ const SignupPage = () => {
 
   return (
     <>
-      <NavBar />
       <section className="py-14 md:py-24 bg-[#0b1727] text-white min-h-screen">
         <div className="container px-4 mx-auto">
           <div className="grid grid-cols-12 justify-center mb-6 md:mb-12">
