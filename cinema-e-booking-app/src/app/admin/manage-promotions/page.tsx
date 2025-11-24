@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAccount } from "@/context/AccountContext";
+import { redirect } from "next/navigation";
 
 // --- Types & Constants ---
 export type PromotionStatus = "Active" | "Inactive";
@@ -23,8 +24,11 @@ const API_BASE =
 const todayISO = () => new Date().toISOString().slice(0, 10); // yyyy-mm-dd
 
 export default function NewPromotionPage() {
-  const router = useRouter();
-
+  const { account } = useAccount();
+  if (account?.role != "ADMIN") {
+    redirect("/");
+  }
+  
   // List state
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loadingPromos, setLoadingPromos] = useState<boolean>(false);
@@ -214,15 +218,25 @@ export default function NewPromotionPage() {
   };
 
   return (
-    <section className="flex items-center justify-center min-h-screen bg-[#0b1727] text-white py-10 md:py-12">
+    <section className="flex items-center justify-center min-h-screen bg-[#0b1727] text-white py-12">
       <div className="w-full max-w-4xl bg-[#17233a] border border-[#1f2d49] rounded-2xl p-8 shadow-lg">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold">
-            Promotions Admin
-          </h1>
-          <p className="text-gray-300 mt-2">
-            View, edit, and create promotions. You can email subscribed users after saving.
-          </p>
+        
+        {/* Header + Add Movie Button */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold">Manage Promotions</h1>
+            <p className="text-gray-300 mt-2 text-sm md:text-base">
+              View, edit, and create promotions. You can email subscribed users after saving.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={resetFormToNew}
+            className="cursor-pointer px-5 py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-sm md:text-base"
+          >
+            + Add Promotion
+          </button>
         </div>
 
         {error && (
@@ -238,17 +252,6 @@ export default function NewPromotionPage() {
 
         {/* Existing Promotions List */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-semibold">Existing Promotions</h2>
-            <button
-              type="button"
-              onClick={resetFormToNew}
-              className="text-sm px-3 py-1 rounded-md bg-[#0b1727] border border-gray-700 hover:bg-[#0f1c30]"
-            >
-              + New Promotion
-            </button>
-          </div>
-
           {loadingPromos ? (
             <p className="text-gray-300 text-sm">Loading promotions…</p>
           ) : promotions.length === 0 ? (
@@ -284,7 +287,7 @@ export default function NewPromotionPage() {
                     <button
                       type="button"
                       onClick={() => handleEditClick(promo)}
-                      className="px-3 py-1 text-sm rounded-md bg-blue-600 hover:bg-blue-500"
+                      className="cursor-pointer px-3 py-1 text-sm rounded-md bg-blue-600 hover:bg-blue-500"
                     >
                       Edit
                     </button>
@@ -404,7 +407,7 @@ export default function NewPromotionPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2 rounded-md bg-blue-600 hover:bg-blue-500 disabled:opacity-60"
+                  className="cursor-pointer px-6 py-2 rounded-md bg-blue-600 hover:bg-blue-500 disabled:opacity-60"
                 >
                   {submitting
                     ? editingId
@@ -421,7 +424,7 @@ export default function NewPromotionPage() {
                     setEditingId(null);
                     setSavedPromotionId(null);
                   }}
-                  className="px-6 py-2 rounded-md bg-[#0b1727] border border-gray-700 hover:bg-[#0f1c30]"
+                  className="cursor-pointer px-6 py-2 rounded-md bg-[#0b1727] border border-gray-700 hover:bg-[#0f1c30]"
                 >
                   Close
                 </button>
@@ -441,7 +444,7 @@ export default function NewPromotionPage() {
                   type="button"
                   onClick={handleEmailSubscribed}
                   disabled={!editingId && !savedPromotionId}
-                  className="px-6 py-2 rounded-md bg-blue-600 hover:bg-blue-500 disabled:opacity-60"
+                  className="cursor-pointer px-6 py-2 rounded-md bg-blue-600 hover:bg-blue-500 disabled:opacity-60"
                 >
                   Email Subscribed Users
                 </button>

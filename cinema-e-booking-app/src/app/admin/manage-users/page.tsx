@@ -5,7 +5,6 @@ import { useAccount } from "@/context/AccountContext";
 
 
 export default function AdminUsersPage() {
-  
   const { account } = useAccount();
   if (account?.role != "ADMIN") {
     redirect("/");

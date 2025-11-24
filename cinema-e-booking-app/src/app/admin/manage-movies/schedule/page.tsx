@@ -2,6 +2,8 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { redirect } from "next/navigation";
+import { useAccount } from "@/context/AccountContext";
 
 // ---- Types ----
 export type Movie = {
@@ -37,6 +39,11 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
 export default function ScheduleMoviePage() {
+	const { account } = useAccount();
+	if (account?.role != "ADMIN") {
+		redirect("/");
+	}
+
   const router = useRouter();
   const params = useSearchParams();
   const movieId = params.get("movieId") || ""; // required via query param

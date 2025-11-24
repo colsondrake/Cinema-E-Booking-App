@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
+import { useAccount } from "@/context/AccountContext";
 
 // === Movie types based on your Java model ===
 type Showtime = {
@@ -29,6 +31,11 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
 export default function ManageMoviesPage() {
+  const { account } = useAccount();
+  if (account?.role != "ADMIN") {
+    redirect("/");
+  }
+
   const router = useRouter();
 
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -162,7 +169,7 @@ export default function ManageMoviesPage() {
                 {/* Placeholder for EDIT features */}
                 <div className="flex items-start">
                 <button
-                  onClick={() => router.push(`schedule/?movieId=${movie.id}`)}
+                  onClick={() => router.push(`/admin/manage-movies/schedule/?movieId=${movie.id}`)}
                   className="px-4 py-2 bg-[#111b2a] border border-gray-700 rounded-md text-sm hover:bg-[#0f1c30]"
                 >
                   Schedule

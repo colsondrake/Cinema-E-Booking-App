@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
+import { useAccount } from "@/context/AccountContext";
 
 // --- Helpers ---
 const currentYear = new Date().getFullYear();
@@ -9,6 +11,11 @@ const RATINGS = ["G", "PG", "PG-13", "R", "NC-17", "NR"] as const;
 const STATUSES = ["Coming Soon", "Now Showing"] as const;
 
 export default function AddMoviePage() {
+  const { account } = useAccount();
+  if (account?.role != "ADMIN") {
+    redirect("/");
+  }
+
   const router = useRouter();
 
   // Form state

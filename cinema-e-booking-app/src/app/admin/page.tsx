@@ -1,13 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { useAccount } from "@/context/AccountContext";
 
 export default function AdminHomePage() {
 
-  const router = useRouter();
 	const { account } = useAccount();
 	if (account?.role != "ADMIN") {
 		redirect("/");
@@ -16,7 +14,6 @@ export default function AdminHomePage() {
 		{ href: "/admin/manage-movies", label: "Manage Movies" },
 		{ href: "/admin/manage-promotions", label: "Manage Promotions" },
 		{ href: "/admin/manage-users", label: "Manage Users" },
-		// { href: "/admin/manage-showtimes", label: "Manage Showtimes" },
 	];
 
   return (
