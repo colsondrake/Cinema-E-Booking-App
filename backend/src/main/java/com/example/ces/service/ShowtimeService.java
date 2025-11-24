@@ -1,12 +1,13 @@
 package com.example.ces.service;
 
+import com.example.ces.model.Movie;
 import com.example.ces.model.Showtime;
+import com.example.ces.repository.MovieRepository;
 import com.example.ces.repository.ShowtimeRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -20,9 +21,12 @@ import java.util.List;
 public class ShowtimeService {
 
     private final ShowtimeRepository showtimeRepository;
+    private final MovieRepository movieRepository;
 
-    public ShowtimeService(ShowtimeRepository showtimeRepository) {
+    public ShowtimeService(ShowtimeRepository showtimeRepository,
+            MovieRepository movieRepository) {
         this.showtimeRepository = showtimeRepository;
+        this.movieRepository = movieRepository;
     }
 
     // ============================
@@ -39,34 +43,48 @@ public class ShowtimeService {
     // ============================
     public Showtime scheduleShowtime(String movieId, String showroomId, LocalDate date, String time) {
 
-        // prevent conflicts (Sprint 3 requirement)
-        boolean conflict = showtimeRepository.existsByShowroomIdAndDateAndTime(showroomId, date, time);
-        if (conflict) {
-            throw new IllegalArgumentException("Showtime conflict: Another showtime is already scheduled in this showroom at the specified date and time.");
-        }
-
-        Showtime showtime = new Showtime();
-        showtime.setMovieId(movieId);
-        showtime.setShowroomId(showroomId);
-        showtime.setDate(date);
-        showtime.setTime(time);
-
-        // Initialize default seats as List<String> if not already set
-        if (showtime.getSeats() == null || showtime.getSeats().isEmpty()) {
-            List<String> defaultSeats = createDefaultSeats();
-            showtime.setSeats(defaultSeats);
-        }
-
-        // Initialize takenSeats as empty list
-        if (showtime.getTakenSeats() == null) {
-            showtime.setTakenSeats(new ArrayList<>());
-        }
-
-        // Set available seats count
-        showtime.setAvailableSeats(showtime.getSeats().size() - showtime.getTakenSeats().size());
-
-        return showtimeRepository.save(showtime);
+    // prevent conflicts (Sprint 3 requirement)
+    boolean conflict = showtimeRepository.existsByShowroomIdAndDateAndTime(showroomId, date, time);
+    if (conflict) {
+        throw new IllegalArgumentException("Showtime conflict: Another showtime is already scheduled in this showroom at the specified date and time.");
     }
+
+    Showtime showtime = new Showtime();
+    showtime.setMovieId(movieId);
+    showtime.setShowroomId(showroomId);
+    showtime.setDate(date);
+    showtime.setTime(time);
+      
+    // Create default 100 seats if not already set
+    if (showtime.getSeats() == null || showtime.getSeats().isEmpty()) {
+        showtime.setSeats(createDefaultSeats());
+    }
+
+    // Make sure takenSeats list exists
+    if (showtime.getTakenSeats() == null) {
+        showtime.setTakenSeats(new ArrayList<>());
+    }
+
+    // Calculate available seats
+    showtime.setAvailableSeats(showtime.getSeats().size() - showtime.getTakenSeats().size());
+
+    // Save to showtime collection
+    Showtime savedShowtime = showtimeRepository.save(showtime);
+
+    // ALSO attach this showtime to the movie document
+    Movie movie = movieRepository.findById(movieId)
+            .orElseThrow(() -> new IllegalArgumentException("Movie not found"));
+
+    if (movie.getShowtimes() == null) {
+        movie.setShowtimes(new ArrayList<>());
+    }
+
+    movie.getShowtimes().add(savedShowtime);
+    movieRepository.save(movie);
+
+    return savedShowtime;
+}
+
 
     // ============================
     // 2. Fetch showtimes for a movie (shared: admin + user)
