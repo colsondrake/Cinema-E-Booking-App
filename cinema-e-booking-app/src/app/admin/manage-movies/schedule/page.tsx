@@ -2,6 +2,8 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { redirect } from "next/navigation";
+import { useAccount } from "@/context/AccountContext";
 
 // ---- Types ----
 export type Showtime = {
@@ -38,6 +40,11 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
 export default function ScheduleMoviePage() {
+	const { account } = useAccount();
+	if (account?.role != "ADMIN") {
+		redirect("/");
+	}
+
   const router = useRouter();
   const params = useSearchParams();
   const movieId = params.get("movieId") || ""; // required via query param
@@ -206,7 +213,7 @@ export default function ScheduleMoviePage() {
                 <button
                   type="button"
                   onClick={() => setShowForm((prev) => !prev)}
-                  className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-sm"
+                  className="cursor-pointer px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-sm"
                 >
                   {showForm ? "Close Form" : "Add a Showtime"}
                 </button>
@@ -318,7 +325,7 @@ export default function ScheduleMoviePage() {
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="px-6 py-2 rounded-md bg-[#0b1727] border border-gray-700 hover:bg-[#0f1c30]"
+                className="cursor-pointer px-6 py-2 rounded-md bg-[#0b1727] border border-gray-700 hover:bg-[#0f1c30]"
               >
                 Back
               </button>

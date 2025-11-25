@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState } from "react";
+import { useRouter } from "next/navigation";
 
 // Types for account data
 export type PaymentCard = {
@@ -55,6 +56,7 @@ const maskCardNumber = (num: string) => {
 
 export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   
+  const router = useRouter();
   const [account, setAccount] = useState<Account | null>(null);
 
   // Function to update a single field in the account
@@ -183,15 +185,6 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }));
 
       const backendAddress = json.address || json.home_address || null;
-      const mappedAddress: Address | undefined = backendAddress
-        ? {
-            street: backendAddress.street || backendAddress.addressLine || "",
-            city: backendAddress.city || "",
-            state: backendAddress.state || "",
-            postalCode: backendAddress.zipCode || backendAddress.postalCode || "",
-            country: backendAddress.country || "",
-          }
-        : undefined;
 
       const acc: Account = {
         id: json.id || "",
@@ -202,12 +195,19 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         isLoggedIn: true,
         emailVerified: true,
         isActive: true,
-        role: "USER",
+        role: json.role || "",
         paymentCards: mappedCards,
         isSubscribedToPromotions: false,
       };
 
       setAccount(acc);
+
+      if (json.role == "USER") {
+        router.push("/");
+      } else if (json.role == "ADMIN") {
+        router.push("/admin");
+      };
+
       return true;
     } catch (e) {
       // Log and re-throw so callers (pages/components) can present the error message to users.

@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import NavBar from "@/components/Navbar";
 import AccountNavbar from "@/components/AccountNavbar";
 import { useAccount } from "@/context/AccountContext";
 
@@ -30,7 +29,6 @@ export default function ChangePasswordPage() {
   if (!account) {
     return (
       <>
-        <NavBar />
         <section className="py-14 md:py-24 bg-[#0b1727] text-white min-h-screen">
           <div className="container px-4 mx-auto text-center">
             <p className="mb-4">No account signed in.</p>
@@ -93,9 +91,7 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <>
-      <NavBar />
-  
+    <>  
       <section className="py-14 md:py-24 bg-[#0b1727] text-white min-h-screen">
       <div className="container px-4 mx-auto">
       {/* Center the entire content block */}

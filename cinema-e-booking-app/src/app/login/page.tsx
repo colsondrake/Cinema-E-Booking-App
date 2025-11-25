@@ -3,11 +3,10 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "../../context/AccountContext";
-import NavBar from "@/components/Navbar";
 
 const LoginPage = () => {
   const router = useRouter();
-  const { login } = useAccount();
+  const { account, login } = useAccount();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -81,7 +80,6 @@ const LoginPage = () => {
 
     try {
       await login(email, password);
-      router.push("/");
     } catch (e: any) {
       setError(e.message);
     }
@@ -89,7 +87,6 @@ const LoginPage = () => {
 
   return (
     <>
-      <NavBar />
       <section className="py-14 md:py-24 bg-[#0b1727] text-white min-h-screen">
         <div className="container px-4 mx-auto">
           <div className="grid grid-cols-12 justify-center mb-6 md:mb-12">
