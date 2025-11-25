@@ -378,7 +378,7 @@ export default function NewPromotionPage() {
               </div>
 
               <div className="mb-8">
-                <label className="block mb-2">Status (UI only)</label>
+                <label className="block mb-2">Status</label>
                 <div className="flex justify-center gap-3 flex-wrap">
                   {STATUSES.map((s) => (
                     <label
@@ -398,9 +398,9 @@ export default function NewPromotionPage() {
                     </label>
                   ))}
                 </div>
-                <p className="text-xs text-gray-500 text-center mt-2">
+                {/* <p className="text-xs text-gray-500 text-center mt-2">
                   (If you want to persist status, add a field to your Java <code>Promotion</code> model.)
-                </p>
+                </p> */}
               </div>
 
               <div className="flex justify-center gap-4">

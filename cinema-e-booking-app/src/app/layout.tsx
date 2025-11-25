@@ -5,7 +5,6 @@ import { AccountProvider } from "../context/AccountContext";
 import { CheckoutProvider } from "../context/CheckoutContext";
 import { MovieProvider } from "../context/MovieContext";
 import Navbar from "@/components/Navbar";
-import Test from "@/components/Test";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,12 +36,7 @@ export default function RootLayout({
           <AccountProvider>
             <CheckoutProvider>
               <Navbar />
-              <div className="flex">
-                <div className="flex-1">
-                  {children}
-                </div>
-                {/* <Test /> */}
-              </div>
+              {children}
             </CheckoutProvider>
           </AccountProvider>
         </MovieProvider>

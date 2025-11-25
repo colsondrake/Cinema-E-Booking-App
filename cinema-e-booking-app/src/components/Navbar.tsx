@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAccount } from "@/context/AccountContext";
+import { useCheckout } from "@/context/CheckoutContext";
+import { useMovie } from "@/context/MovieContext";
 
 const AuthNavMenu = () => {
 	const router = useRouter();
@@ -94,6 +96,10 @@ const AuthNavMenu = () => {
 };
 
 const Navbar = () => {
+	const { account } = useAccount();
+	const { checkout } = useCheckout();
+	const { movie, showtime } = useMovie();
+
 	return (
 		<div className="py-6 bg-[#09121F] text-white sticky top-0 z-50 shadow-lg border-b-3 border-gray-900">
 			<div className="flex flex-row items-center justify-center w-full">
@@ -101,6 +107,17 @@ const Navbar = () => {
 					CINEMAGIC
 				</Link>
 				<AuthNavMenu />
+				<button
+					className="border border-blue-600 bg-blue-600 text-white hover:bg-blue-500 py-1.5 px-4 rounded ml-2 cursor-pointer"
+					onClick={() => {
+						console.log("MOVIE: ", movie)
+						console.log("SHOWTIME: ", showtime)
+						console.log("ACCOUNT: ", account)
+						console.log("CHECKOUT: ", checkout)
+					}}
+				>
+					Console Log
+				</button>
 			</div>
 		</div>
 	);

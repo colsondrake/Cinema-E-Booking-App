@@ -1,24 +1,67 @@
 'use client'
 
-import { useCallback, useMemo } from 'react';
+import { useRouter } from "next/navigation";
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { useCheckout } from '@/context/CheckoutContext';
 import type { Seat } from '@/context/CheckoutContext';
 
 const SeatSelection = () => {
+    const router = useRouter();
     const { checkout, updateCheckoutField } = useCheckout();
-
-    // All seat ids 1..100.
-    const seatNumbers = useMemo(() => Array.from({ length: 100 }, (_, i) => i + 1), []);
-
-    // Random taken seats generated once (20 unique).
-    const takenSeatSet = useMemo(() => {
-        const set = new Set<number>();
-        while (set.size < 20) set.add(Math.floor(Math.random() * 100) + 1);
-        return set;
-    }, []);
 
     // Currently selected seat ids (derived from checkout).
     const selectedSeatIds = checkout?.seats ? checkout.seats.map(s => s.seatId) : [];
+    // Error message
+    const [error, setError] = useState<string | null>(null)
+    // All seat ids 1..100.
+    const seatNumbers = useMemo(() => Array.from({ length: 100 }, (_, i) => i + 1), []);
+
+    // METHODS ----------------------
+
+    // Dynamically fetched taken seats for this showtime.
+    const [takenSeatSet, setTakenSeatSet] = useState<Set<number>>(new Set());
+
+    useEffect(() => {
+        const fetchTakenSeats = async () => {
+            if (!checkout?.showtimeId) return;
+            try {
+                // Fetch all bookings (assuming endpoint returns array of bookings)
+                const res = await fetch(`http://localhost:8080/api/bookings`, { method: 'GET' });
+                if (!res.ok) return; // Silently ignore failures
+                const data = await res.json();
+
+                // Expected shape assumption: data is an array of booking objects
+                // Each booking: { showtimeId: string, tickets: [{ seatNumber: string, ticketType: string, ... }] }
+                const relevant = Array.isArray(data)
+                    ? data.filter(b => b && b.showtimeId === checkout.showtimeId)
+                    : [];
+
+                const seatIds: number[] = [];
+                for (const booking of relevant) {
+                    if (Array.isArray(booking.tickets)) {
+                        for (const t of booking.tickets) {
+                            if (t?.seatNumber && typeof t.seatNumber === 'string') {
+                                // seatNumber format assumed 'row-position'
+                                const parts = t.seatNumber.split('-');
+                                if (parts.length === 2) {
+                                    const row = parseInt(parts[0], 10);
+                                    const pos = parseInt(parts[1], 10);
+                                    if (!isNaN(row) && !isNaN(pos)) {
+                                        const id = (row - 1) * 10 + pos; // inverse mapping
+                                        seatIds.push(id);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                setTakenSeatSet(new Set(seatIds));
+            } catch (e) {
+                // Ignore errors; keep set empty
+            }
+        };
+        fetchTakenSeats();
+    }, [checkout?.showtimeId]);
 
     // Helper to build a full Seat object from an id.
     const buildSeat = useCallback((id: number): Seat => {
@@ -69,20 +112,23 @@ const SeatSelection = () => {
     };
 
     const handleSubmit = () => {
-        
-    }
-
-    if (!checkout) {
-        return (
-            <div className="p-4 text-sm text-gray-400 bg-[#17233a] rounded-md border border-gray-700">
-                Seat selection unavailable until checkout starts.
-            </div>
-        );
+        setError(null);
+        if (checkout?.seats.length != checkout?.tickets.length) {
+            setError("Number of seats selected must match number of tickets.");
+            return
+        }
+        router.push("/seat-selection/confirm")
     }
 
     return (
         <div className="flex flex-col gap-6 bg-[#17233a] p-6 rounded-xl border border-[#17233a] shadow">
-            <h2 className="text-xl font-semibold text-center">Select {checkout.tickets?.length} Seats</h2>
+            <h2 className="text-xl font-semibold text-center">Select {checkout?.tickets.length} Seats</h2>
+            {/* Error Messages */}
+            {error && (
+                <div className="flex flex-row justify-center">
+                    <label className="font-semibold mb-1 text-red-600">{error}</label>
+                </div>
+            )}
 
             {/* Screen */}
             <div className="flex flex-col items-center gap-1">
@@ -119,21 +165,26 @@ const SeatSelection = () => {
                 </div>
             </div>
 
-            {checkout.seats.length > 0 && (
-                <div className="flex flex-row justify-between mt-2 text-lg font-bold text-center">
-                    <div className="flex flex-row gap-1">
-                        <p>Selected:</p>
-                        <span className="text-blue-300">{checkout.seats.map(s => s.seatId).join(', ')}</span>
-                    </div>
+            <div className="flex flex-col justify-center mt-2 text-lg font-bold text-center">
+                <div className="flex flex-row gap-1">
+                    <p>Selected:</p>
+                    <span className="text-blue-300">{checkout?.seats.map(s => s.seatId).join(', ')}</span>
+                </div>
+                <div className="flex flex-row justify-between gap-10 mt-2 text-lg font-bold text-center">
                     <button
-                        className="px-8 py-3 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors duration-200 cursor-pointer"
+                        onClick={() => (router.push("/booking"))}
+                        className="flex-1 px-6 py-3 rounded-md bg-gray-600 text-white font-bold hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors duration-200 cursor-pointer"
+                    >
+                        Back to Booking
+                    </button>
+                    <button
+                        className="flex-1 px-6 py-3 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors duration-200 cursor-pointer"
                         onClick={handleSubmit}
                     >
-                        Checkout
+                        Confirm Details
                     </button>
-
                 </div>
-            )}
+            </div>
         </div>
     );
 };

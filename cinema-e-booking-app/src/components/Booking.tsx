@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCheckout } from "@/context/CheckoutContext";
-import { Movie, useMovie } from "@/context/MovieContext";
+import { useMovie } from "@/context/MovieContext";
 
 const TICKET_TYPES = [
     { label: "Adult", value: "adult", price: 12 },
@@ -22,8 +22,6 @@ const Booking = () => {
         child: 0,
         senior: 0,
     });
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
     const [error, setError] = useState<string | null>(null);
     const total = TICKET_TYPES.reduce((sum, t) => sum + (ticketCounts[t.value] || 0) * t.price, 0);
 
@@ -35,7 +33,7 @@ const Booking = () => {
         setError(null);
 
         // Error handling
-        if (name == "" || email == "") {
+        if (checkout?.name == "" || checkout?.email == "") {
             setError("Name and email must be entered.");
             return
         }
@@ -43,7 +41,7 @@ const Booking = () => {
             setError("At least 1 ticket must be selected.");
             return
         }
-        if (!validateEmail(email)) {
+        if (!checkout?.email || !validateEmail(checkout.email)) {
             setError("Please enter a valid email address.");
             return;
         }
@@ -51,6 +49,25 @@ const Booking = () => {
         // Successful form completion
         router.push("/seat-selection")
     };
+
+    const buildTicket = (ticketType: string) => {
+        if (!checkout) return;
+        const newTicket = {
+            ticketType: ticketType,
+            seatNumber: "" // Will be assigned during seat selection
+        };
+        updateCheckoutField("tickets", [...checkout.tickets, newTicket]);
+    }
+
+    const removeTicket = (ticketType: string) => {
+        if (!checkout) return;
+        const ticketIndex = checkout.tickets.findLastIndex(t => t.ticketType === ticketType);
+        if (ticketIndex !== -1) {
+            const updatedTickets = [...checkout.tickets];
+            updatedTickets.splice(ticketIndex, 1);
+            updateCheckoutField("tickets", updatedTickets);
+        }
+    }
 
     return (
         <>
@@ -88,8 +105,8 @@ const Booking = () => {
                                         <input
                                             type="text"
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-[#0b1727] dark:border-gray-700 dark:text-white"
-                                            value={name}
-                                            onChange={e => setName(e.target.value)}
+                                            value={checkout?.name ?? ""}
+                                            onChange={e => updateCheckoutField("name", e.target.value)}
                                             required
                                         />
                                     </div>
@@ -99,8 +116,8 @@ const Booking = () => {
                                         <input
                                             type="email"
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-[#0b1727] dark:border-gray-700 dark:text-white"
-                                            value={email}
-                                            onChange={e => setEmail(e.target.value)}
+                                            value={checkout?.email ?? ""}
+                                            onChange={e => updateCheckoutField("email", e.target.value)}
                                             required
                                         />
                                     </div>
@@ -113,10 +130,11 @@ const Booking = () => {
                                             const count = ticketCounts[t.value] || 0;
                                             const decrement = () => {
                                                 setTicketCounts(prev => ({ ...prev, [t.value]: Math.max(0, count - 1) }));
-
+                                                removeTicket(t.value);
                                             }
                                             const increment = () => {
                                                 setTicketCounts(prev => ({ ...prev, [t.value]: Math.min(10, count + 1) }));
+                                                buildTicket(t.value);
                                             }
                                             return (
                                                 <div key={t.value} className="flex items-center justify-between bg-[#0b1727] dark:bg-[#0b1727] px-4 py-3 rounded-md border border-gray-300 dark:border-gray-700">

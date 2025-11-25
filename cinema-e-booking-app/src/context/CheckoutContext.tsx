@@ -14,9 +14,11 @@ export type Ticket = {
 }
 
 export type Checkout = {
+  name: string | null;
+  email: string | null;
   showtimeId: number | null;
   userId: string | null;
-  tickets: Ticket[] | null;
+  tickets: Ticket[];
   seats: Seat[];
 }
 
@@ -31,6 +33,8 @@ const CheckoutContext = createContext<CheckoutContextType | undefined>(undefined
 export const CheckoutProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   
   const [checkout, setCheckout] = useState<Checkout>({
+    name: null,
+    email: null,
     showtimeId: null,
     userId: null,
     tickets: [],
