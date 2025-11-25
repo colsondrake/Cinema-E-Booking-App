@@ -8,7 +8,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Movie } from "@/context/MovieContext";
+import { Movie, useMovie } from "@/context/MovieContext";
+import { useCheckout } from "@/context/CheckoutContext";
 
 /**
  * Movies component
@@ -17,6 +18,8 @@ import { Movie } from "@/context/MovieContext";
 const Movies = () => {
   // Next.js router for navigation
   const router = useRouter();
+  const { setMovie, setShowtime } = useMovie();
+  const { setCheckout } = useCheckout();
 
   // State variables
   const [movies, setMovies] = useState<Movie[]>([]); // All movies fetched from backend
@@ -28,6 +31,19 @@ const Movies = () => {
   const [genres, setGenres] = useState<string[]>([]);
 
 
+  useEffect(() => {
+    // Reset movie, showtime, and checkout data
+    setMovie(null);
+    setShowtime(null);
+    setCheckout({
+      name: null,
+      email: null,
+      showtimeId: null,
+      userId: null,
+      tickets: [],
+      seats: [],
+    });
+  }, []);
   /**
    * Fetch movies from backend API, with optional search and genre filters.
    * Triggers on changes to 'search' or 'genres'.

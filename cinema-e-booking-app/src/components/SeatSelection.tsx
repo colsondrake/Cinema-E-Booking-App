@@ -4,10 +4,12 @@ import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState, useEffect } from 'react';
 import { useCheckout } from '@/context/CheckoutContext';
 import type { Seat } from '@/context/CheckoutContext';
+import { useMovie } from '@/context/MovieContext';
 
 const SeatSelection = () => {
     const router = useRouter();
     const { checkout, updateCheckoutField } = useCheckout();
+    const { showtime } = useMovie();
 
     // Currently selected seat ids (derived from checkout).
     const selectedSeatIds = checkout?.seats ? checkout.seats.map(s => s.seatId) : [];
@@ -18,50 +20,74 @@ const SeatSelection = () => {
 
     // METHODS ----------------------
 
-    // Dynamically fetched taken seats for this showtime.
-    const [takenSeatSet, setTakenSeatSet] = useState<Set<number>>(new Set());
+    // Dynamically fetched taken seats for this showtime (stored as Seat[]).
+    const [takenSeatSet, setTakenSeatSet] = useState<Seat[]>([]);
+
+    // Fast lookup for taken seat ids
+    const takenSeatIds = useMemo(() => new Set(takenSeatSet.map(s => s.seatId)), [takenSeatSet]);
+
+    // Helper: parse backend seat label to Seat
+    const parseSeatLabel = useCallback((label: string): Seat | null => {
+        // Supported formats: "row-position" (e.g., "3-4") or letter+number (e.g., "A1")
+        let row: number | null = null;
+        let pos: number | null = null;
+
+        // Try numeric format row-position
+        if (/^\d+[-_]\d+$/.test(label)) {
+            const [r, p] = label.split(/[-_]/);
+            row = parseInt(r, 10);
+            pos = parseInt(p, 10);
+        } else if (/^[A-Za-z]\d+$/.test(label)) {
+            const letter = label[0].toUpperCase();
+            const map = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            row = map.indexOf(letter) + 1; // A=1, B=2, ...
+            pos = parseInt(label.slice(1), 10);
+        }
+
+        if (!row || !pos) return null;
+        if (row < 1 || row > 10 || pos < 1 || pos > 10) return null;
+
+        const seatId = (row - 1) * 10 + pos;
+        return {
+            seatId,
+            row,
+            seatNumber: `${row}-${pos}`,
+            isBooked: true,
+        };
+    }, []);
 
     useEffect(() => {
         const fetchTakenSeats = async () => {
-            if (!checkout?.showtimeId) return;
             try {
-                // Fetch all bookings (assuming endpoint returns array of bookings)
-                const res = await fetch(`http://localhost:8080/api/bookings`, { method: 'GET' });
-                if (!res.ok) return; // Silently ignore failures
-                const data = await res.json();
-
-                // Expected shape assumption: data is an array of booking objects
-                // Each booking: { showtimeId: string, tickets: [{ seatNumber: string, ticketType: string, ... }] }
-                const relevant = Array.isArray(data)
-                    ? data.filter(b => b && b.showtimeId === checkout.showtimeId)
-                    : [];
-
-                const seatIds: number[] = [];
-                for (const booking of relevant) {
-                    if (Array.isArray(booking.tickets)) {
-                        for (const t of booking.tickets) {
-                            if (t?.seatNumber && typeof t.seatNumber === 'string') {
-                                // seatNumber format assumed 'row-position'
-                                const parts = t.seatNumber.split('-');
-                                if (parts.length === 2) {
-                                    const row = parseInt(parts[0], 10);
-                                    const pos = parseInt(parts[1], 10);
-                                    if (!isNaN(row) && !isNaN(pos)) {
-                                        const id = (row - 1) * 10 + pos; // inverse mapping
-                                        seatIds.push(id);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                // Determine showtime id from checkout or movie context
+                const showtimeId = (checkout?.showtimeId ?? showtime?.showtimeId) ?? null;
+                if (!showtimeId) {
+                    setTakenSeatSet([]);
+                    return;
                 }
-                setTakenSeatSet(new Set(seatIds));
+
+                const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+                const url = `${apiBase}/api/showtimes/${String(showtimeId)}/seats`;
+
+                const res = await fetch(url, { method: 'GET', cache: 'no-store' });
+                if (!res.ok) {
+                    setTakenSeatSet([]);
+                    return;
+                }
+                const data: unknown = await res.json();
+                // Expecting string[] of labels from backend
+                const labels = Array.isArray(data) ? data : [];
+                const seats: Seat[] = labels
+                    .map((lbl) => (typeof lbl === 'string' ? parseSeatLabel(lbl) : null))
+                    .filter((s): s is Seat => !!s);
+
+                setTakenSeatSet(seats);
             } catch (e) {
-                // Ignore errors; keep set empty
+                setTakenSeatSet([]);
             }
         };
         fetchTakenSeats();
-    }, [checkout?.showtimeId]);
+    }, [checkout?.showtimeId, showtime?.showtimeId, parseSeatLabel]);
 
     // Helper to build a full Seat object from an id.
     const buildSeat = useCallback((id: number): Seat => {
@@ -77,19 +103,19 @@ const SeatSelection = () => {
 
     // Toggle seat selection if not taken.
     const toggleSeat = useCallback((seatId: number) => {
-        if (!checkout || takenSeatSet.has(seatId)) return;
+        if (!checkout || takenSeatIds.has(seatId)) return;
         const isSelected = selectedSeatIds.includes(seatId);
         const seats = isSelected
             ? checkout.seats.filter(s => s.seatId !== seatId)
             : [...checkout.seats, buildSeat(seatId)];
 
         updateCheckoutField('seats', seats);
-    }, [checkout, selectedSeatIds, updateCheckoutField, takenSeatSet, buildSeat]);
+    }, [checkout, selectedSeatIds, updateCheckoutField, takenSeatIds, buildSeat]);
 
     // Helper to build seat button.
     const renderSeat = (num: number) => {
         const isSelected = selectedSeatIds.includes(num);
-        const isTaken = takenSeatSet.has(num);
+        const isTaken = takenSeatIds.has(num);
         const base = 'h-10 w-10 flex items-center justify-center text-xs font-medium rounded-md border transition-colors duration-150';
         const state = isTaken
             ? 'bg-red-700 text-white border-red-800 cursor-not-allowed opacity-70'
