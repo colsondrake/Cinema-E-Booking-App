@@ -1,6 +1,5 @@
 'use client'
 
-import { useCallback } from 'react';
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCheckout } from "@/context/CheckoutContext";
@@ -17,13 +16,17 @@ const Booking = () => {
     const { checkout, updateCheckoutField } = useCheckout();
     const { movie, showtime } = useMovie();
 
-    const [ticketCounts, setTicketCounts] = useState<Record<string, number>>({
-        adult: 0,
-        child: 0,
-        senior: 0,
-    });
     const [error, setError] = useState<string | null>(null);
-    const total = TICKET_TYPES.reduce((sum, t) => sum + (ticketCounts[t.value] || 0) * t.price, 0);
+    
+    // Derive ticket counts from checkout.tickets
+    const getTicketCount = (ticketType: string) => {
+        return checkout?.tickets.filter(t => t.ticketType === ticketType).length || 0;
+    };
+    
+    const total = TICKET_TYPES.reduce((sum, t) => {
+        const count = getTicketCount(t.value);
+        return sum + count * t.price;
+    }, 0);
 
     const validateEmail = (e: string) => {
         return /^\S+@\S+\.\S+$/.test(e);
@@ -127,13 +130,11 @@ const Booking = () => {
                                     <label className="block font-semibold mb-2">Tickets</label>
                                     <div className="space-y-4">
                                         {TICKET_TYPES.map(t => {
-                                            const count = ticketCounts[t.value] || 0;
+                                            const count = getTicketCount(t.value);
                                             const decrement = () => {
-                                                setTicketCounts(prev => ({ ...prev, [t.value]: Math.max(0, count - 1) }));
                                                 removeTicket(t.value);
                                             }
                                             const increment = () => {
-                                                setTicketCounts(prev => ({ ...prev, [t.value]: Math.min(10, count + 1) }));
                                                 buildTicket(t.value);
                                             }
                                             return (

@@ -24,6 +24,7 @@ export type Checkout = {
 
 type CheckoutContextType = {
   checkout: Checkout | null;
+  setCheckout: React.Dispatch<React.SetStateAction<Checkout>>;
   updateCheckoutField: <K extends keyof Checkout>(field: K, value: Checkout[K]) => void;
 };
 
@@ -66,7 +67,7 @@ export const CheckoutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }
 
   return (
-    <CheckoutContext.Provider value={{ checkout, updateCheckoutField }}>
+    <CheckoutContext.Provider value={{ checkout, setCheckout, updateCheckoutField }}>
       {children}
     </CheckoutContext.Provider>
   );
