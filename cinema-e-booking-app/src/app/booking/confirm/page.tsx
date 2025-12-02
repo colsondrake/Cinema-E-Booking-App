@@ -4,6 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { useCheckout } from "@/context/CheckoutContext";
 import { useMovie } from "@/context/MovieContext";
+import { useAccount } from "@/context/AccountContext";
 
 const TICKET_PRICES: Record<string, number> = {
     adult: 12,
@@ -15,6 +16,7 @@ const ConfirmBooking = () => {
     const router = useRouter();
     const { checkout } = useCheckout();
     const { movie, showtime } = useMovie();
+    const { account } = useAccount();
 
     // Calculate ticket counts by type
     const ticketCounts = checkout?.tickets.reduce((acc, ticket) => {
@@ -34,11 +36,11 @@ const ConfirmBooking = () => {
 
     const handleConfirm = () => {
         // Navigate to checkout page
-        router.push("/checkout");
-    };
-
-    const handleBack = () => {
-        router.back();
+        if (account) {
+            router.push("/booking/checkout");
+        } else {
+            router.push("/booking/sign-in");
+        }
     };
 
     if (!checkout || !movie || !showtime) {
@@ -155,7 +157,7 @@ const ConfirmBooking = () => {
                         {/* Action Buttons */}
                         <div className="flex flex-col sm:flex-row gap-4">
                             <button
-                                onClick={handleBack}
+                                onClick={() => router.back()}
                                 className="flex-1 px-6 py-3 rounded-md bg-gray-600 text-white font-bold hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors duration-200 cursor-pointer"
                             >
                                 Back to Seat Selection

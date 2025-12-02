@@ -201,13 +201,6 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
       };
 
       setAccount(acc);
-
-      if (json.role == "USER") {
-        router.push("/");
-      } else if (json.role == "ADMIN") {
-        router.push("/admin");
-      };
-
       return true;
     } catch (e) {
       // Log and re-throw so callers (pages/components) can present the error message to users.
