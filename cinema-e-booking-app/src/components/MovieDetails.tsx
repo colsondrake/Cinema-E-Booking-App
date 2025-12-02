@@ -154,7 +154,7 @@ const MovieDetails = () => {
                           setMovie(movie);
                           setShowtime(showtimeObj);
                         }
-                        router.push("/booking");
+                        router.push("/booking/ticket-selection");
                       }}
                     >
                       {timeLabel}

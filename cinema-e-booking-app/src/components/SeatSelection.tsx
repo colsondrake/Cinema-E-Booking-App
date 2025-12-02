@@ -143,7 +143,7 @@ const SeatSelection = () => {
             setError("Number of seats selected must match number of tickets.");
             return
         }
-        router.push("/seat-selection/confirm")
+        router.push("/booking/confirm")
     }
 
     return (
@@ -198,7 +198,7 @@ const SeatSelection = () => {
                 </div>
                 <div className="flex flex-row justify-between gap-10 mt-2 text-lg font-bold text-center">
                     <button
-                        onClick={() => (router.push("/booking"))}
+                        onClick={() => (router.back())}
                         className="flex-1 px-6 py-3 rounded-md bg-gray-600 text-white font-bold hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors duration-200 cursor-pointer"
                     >
                         Back to Booking

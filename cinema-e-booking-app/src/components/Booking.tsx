@@ -28,29 +28,17 @@ const Booking = () => {
         return sum + count * t.price;
     }, 0);
 
-    const validateEmail = (e: string) => {
-        return /^\S+@\S+\.\S+$/.test(e);
-    };
-
     const handleSubmit = () => {
         setError(null);
 
         // Error handling
-        if (checkout?.name == "" || checkout?.email == "") {
-            setError("Name and email must be entered.");
-            return
-        }
         if (total == 0) {
             setError("At least 1 ticket must be selected.");
             return
         }
-        if (!checkout?.email || !validateEmail(checkout.email)) {
-            setError("Please enter a valid email address.");
-            return;
-        }
 
         // Successful form completion
-        router.push("/seat-selection")
+        router.push("/booking/seat-selection")
     };
 
     const buildTicket = (ticketType: string) => {
@@ -101,30 +89,6 @@ const Booking = () => {
                                         <label className="font-semibold mb-1 text-red-600">{error}</label>
                                     </div>
                                 )}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Name input */}
-                                    <div>
-                                        <label className="block font-semibold mb-1">Name</label>
-                                        <input
-                                            type="text"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-[#0b1727] dark:border-gray-700 dark:text-white"
-                                            value={checkout?.name ?? ""}
-                                            onChange={e => updateCheckoutField("name", e.target.value)}
-                                            required
-                                        />
-                                    </div>
-                                    {/* Email input */}
-                                    <div>
-                                        <label className="block font-semibold mb-1">Email</label>
-                                        <input
-                                            type="email"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-[#0b1727] dark:border-gray-700 dark:text-white"
-                                            value={checkout?.email ?? ""}
-                                            onChange={e => updateCheckoutField("email", e.target.value)}
-                                            required
-                                        />
-                                    </div>
-                                </div>
                                 {/* Ticket counts per type */}
                                 <div>
                                     <label className="block font-semibold mb-2">Tickets</label>
