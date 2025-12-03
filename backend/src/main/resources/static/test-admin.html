@@ -65,8 +65,7 @@
     </div>
 
     <!-- ============================
-         ⭐ NEW: GET MOVIE DETAIL
-         (To verify showtimes[] updates)
+         ⭐ GET MOVIE DETAIL
     =============================== -->
     <div class="box">
         <h2>⭐ Get Movie Details (Check showtimes[])</h2>
@@ -118,6 +117,16 @@
         <h2>List Promotions</h2>
         <button onclick="listPromotions()">Load Promotions</button>
         <pre id="promotions_output"></pre>
+    </div>
+
+    <!-- ============================
+         ⭐ NEW — GET PROMOTION BY CODE
+    =============================== -->
+    <div class="box">
+        <h2>⭐ Get Promotion by Code</h2>
+        <input id="gp_code" placeholder="Promo Code (e.g. PROMO10)"><br>
+        <button onclick="getPromotionByCode()">Get Promotion</button>
+        <pre id="promotion_code_output"></pre>
     </div>
 
     <!-- ============================
@@ -247,6 +256,18 @@
         }
 
         // ----------------------
+        // ⭐ GET PROMOTION BY CODE
+        // ----------------------
+        function getPromotionByCode() {
+            const code = gp_code.value;
+
+            fetch(`${BASE}/api/promotions/${code}`)
+                .then(r => r.json())
+                .then(data => promotion_code_output.textContent = JSON.stringify(data, null, 2))
+                .catch(err => alert("Error: " + err));
+        }
+
+        // ----------------------
         // SEND PROMOTION EMAIL
         // ----------------------
         function sendPromotion() {
@@ -275,12 +296,12 @@
         // ----------------------
         function reserveSeats() {
             const id = reserve_showtimeId.value;
-            const seats = JSON.parse(reserve_seats.value); // array only!
+            const seats = JSON.parse(reserve_seats.value); // array only
 
             fetch(`${BASE}/api/showtimes/${id}/reserve`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(seats)   // ← FIXED
+                body: JSON.stringify(seats)
             })
                 .then(r => r.text())
                 .then(alert);
