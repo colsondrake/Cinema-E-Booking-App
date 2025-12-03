@@ -1,4 +1,4 @@
-package com.example.ces.bootstrap;
+package com.example.ces.service;
 
 import com.example.ces.model.Showroom;
 import com.example.ces.repository.ShowroomRepository;
