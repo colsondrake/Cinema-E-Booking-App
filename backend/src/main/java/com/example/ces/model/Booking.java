@@ -57,6 +57,12 @@ public class Booking {
         this.showtime = showtime;
     }
 
+    public String getShowtimeId() {
+        if (showtime != null) {
+            return showtime.getShowtimeId();
+        }
+        return null;
+    }
     public LocalDate getBookingDate() {
         return bookingDate;
     }
