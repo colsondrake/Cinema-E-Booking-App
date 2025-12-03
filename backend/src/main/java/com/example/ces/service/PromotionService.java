@@ -126,12 +126,11 @@ public class PromotionService {
         existing.setDiscountPercent(updatedData.getDiscountPercent());
         existing.setStartDate(updatedData.getStartDate());
         existing.setEndDate(updatedData.getEndDate());
-        //existing.setStatus(updatedData.getStatus()); // NEW: status supported
+        // existing.setStatus(updatedData.getStatus()); // NEW: status supported
 
         // --- SAVE ---
         return promotionRepository.save(existing);
     }
-
 
     // ============================================================
     // Helper to send email
@@ -152,4 +151,10 @@ public class PromotionService {
 
         mailSender.send(message);
     }
+
+    public Promotion getPromotionByCode(String code) {
+        return promotionRepository.findByPromotionCodeIgnoreCase(code)
+                .orElseThrow(() -> new IllegalArgumentException("Promotion code not found"));
+    }
+
 }
