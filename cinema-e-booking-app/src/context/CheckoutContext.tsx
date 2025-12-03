@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState } from "react";
+import { PaymentCard } from "@/context/AccountContext";
 
 export type Seat = {
   seatId: number;
@@ -16,6 +17,7 @@ export type Ticket = {
 export type Checkout = {
   name: string | null;
   email: string | null;
+  card: PaymentCard | null;
   showtimeId: number | null;
   userId: string | null;
   tickets: Ticket[];
@@ -23,9 +25,10 @@ export type Checkout = {
 }
 
 type CheckoutContextType = {
-  checkout: Checkout | null;
+  checkout: Checkout;
   setCheckout: React.Dispatch<React.SetStateAction<Checkout>>;
   updateCheckoutField: <K extends keyof Checkout>(field: K, value: Checkout[K]) => void;
+  submitCheckout: (chk: Checkout) => Promise<{ success: boolean; message?: string }>;
 };
 
 const CheckoutContext = createContext<CheckoutContextType | undefined>(undefined);
@@ -36,6 +39,7 @@ export const CheckoutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [checkout, setCheckout] = useState<Checkout>({
     name: null,
     email: null,
+    card: null,
     showtimeId: null,
     userId: null,
     tickets: [],
@@ -67,7 +71,7 @@ export const CheckoutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }
 
   return (
-    <CheckoutContext.Provider value={{ checkout, setCheckout, updateCheckoutField }}>
+    <CheckoutContext.Provider value={{ checkout, setCheckout, updateCheckoutField, submitCheckout }}>
       {children}
     </CheckoutContext.Provider>
   );

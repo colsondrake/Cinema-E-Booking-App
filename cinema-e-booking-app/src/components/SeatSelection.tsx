@@ -3,12 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState, useEffect } from 'react';
 import { useCheckout } from '@/context/CheckoutContext';
+import { useAccount } from "@/context/AccountContext";
 import type { Seat } from '@/context/CheckoutContext';
 import { useMovie } from '@/context/MovieContext';
 
 const SeatSelection = () => {
     const router = useRouter();
     const { checkout, updateCheckoutField } = useCheckout();
+    const { account } = useAccount();
     const { showtime } = useMovie();
 
     // Currently selected seat ids (derived from checkout).
@@ -143,7 +145,8 @@ const SeatSelection = () => {
             setError("Number of seats selected must match number of tickets.");
             return
         }
-        router.push("/booking/confirm")
+        if (account) router.push("/booking/checkout");
+        else router.push("/booking/sign-in")
     }
 
     return (
@@ -198,16 +201,16 @@ const SeatSelection = () => {
                 </div>
                 <div className="flex flex-row justify-between gap-10 mt-2 text-lg font-bold text-center">
                     <button
-                        onClick={() => (router.back())}
+                        onClick={() => (router.push("/booking/ticket-selection"))}
                         className="flex-1 px-6 py-3 rounded-md bg-gray-600 text-white font-bold hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors duration-200 cursor-pointer"
                     >
-                        Back to Booking
+                        Back to Ticket Selection
                     </button>
                     <button
                         className="flex-1 px-6 py-3 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors duration-200 cursor-pointer"
                         onClick={handleSubmit}
                     >
-                        Confirm Details
+                        Checkout
                     </button>
                 </div>
             </div>

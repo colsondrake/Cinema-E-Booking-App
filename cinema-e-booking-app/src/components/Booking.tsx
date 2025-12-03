@@ -7,7 +7,7 @@ import { useMovie } from "@/context/MovieContext";
 
 const TICKET_TYPES = [
     { label: "Adult", value: "adult", price: 12 },
-    { label: "Child", value: "child", price: 8 },
+    { label: "Child", value: "child", price: 6 },
     { label: "Senior", value: "senior", price: 9 },
 ];
 
