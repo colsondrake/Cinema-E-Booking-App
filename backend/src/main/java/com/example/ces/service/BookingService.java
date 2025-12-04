@@ -198,6 +198,14 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
     
+    // Method to retrieve all Bookings for a showtime
+    public List<Booking> getBookingsByShowtimeId(String mongoShowtimeId) {
+        // use repository query that looks up booking.showtime.id
+        List<Booking> bookings = bookingRepository.findByShowtime_Id(mongoShowtimeId);
+        syncShowtimeTakenSeatsWithBookings(mongoShowtimeId);
+        return bookings;
+    }
+
     /**
      * Sync all showtime takenSeats with actual booked tickets (repair function)
      * @param mongoShowtimeId MongoDB _id of the showtime

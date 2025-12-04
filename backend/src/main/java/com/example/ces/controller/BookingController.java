@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -59,12 +60,8 @@ public class BookingController {
      * Get booking by ID
      */
     @GetMapping("/{bookingId}")
-    public ResponseEntity<?> getBooking(@PathVariable String id) {
-        try {
-            return ResponseEntity.ok(bookingService.getBookingById(id));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(404).body(Map.of("error", ex.getMessage()));
-        }
+    public ResponseEntity<?> getBooking(@PathVariable String bookingId) {
+            return ResponseEntity.ok(bookingService.getBookingById(bookingId));
     }
 
     /**
@@ -72,10 +69,14 @@ public class BookingController {
      */
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getUserBookings(@PathVariable String userId) {
-        try {
             return ResponseEntity.ok(bookingService.getBookingsByUserId(userId));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(404).body(Map.of("error", ex.getMessage()));
-        }
+    }
+
+    /**
+     * Get all bookings for a showtime
+     */
+    @GetMapping("/showtime/{showtimeId}")
+    public ResponseEntity<?> getBookingsForShowtime(@PathVariable String showtimeId) {
+        return ResponseEntity.ok(bookingService.getBookingsByShowtimeId(showtimeId));
     }
 }
