@@ -102,4 +102,29 @@ public class MovieService {
     public Movie saveMovie(Movie movie) {
         return movieRepository.save(movie);
     }
+
+    public void deleteMovieById(String id) {
+        movieRepository.deleteById(id);
+    }
+
+    public Movie updateMovie(String id, Movie updated) {
+        return movieRepository.findById(id)
+                .map(existing -> {
+                    // Update only the fields that are allowed to change
+                    existing.setTitle(updated.getTitle());
+                    existing.setDirector(updated.getDirector());
+                    existing.setRating(updated.getRating());
+                    existing.setGenres(updated.getGenres());
+                    existing.setYear(updated.getYear());
+                    existing.setPosterUrl(updated.getPosterUrl());
+                    existing.setTrailerUrl(updated.getTrailerUrl());
+                    existing.setDescription(updated.getDescription());
+                    existing.setStatus(updated.getStatus());
+    
+                    return movieRepository.save(existing);
+                })
+                .orElseThrow(() -> new IllegalArgumentException("Movie not found"));
+    }
+    
+    
 }
