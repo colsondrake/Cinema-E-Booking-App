@@ -107,7 +107,7 @@ const Navbar = () => {
 					CINEMAGIC
 				</Link>
 				<AuthNavMenu />
-				{/* <button 
+				<button 
 					className="border border-blue-600 bg-blue-600 text-white hover:bg-blue-500 py-1.5 px-4 rounded ml-2 cursor-pointer"
 					onClick={() => {
 						console.log("ACCOUNT: ", account);
@@ -116,7 +116,7 @@ const Navbar = () => {
 						console.log("SHOWTIME: ", showtime);
 					}}>
 						Console Log
-				</button> */}
+				</button>
 			</div>
 		</div>
 	);

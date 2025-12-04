@@ -3,13 +3,18 @@
 import React, { createContext, useContext, useState } from "react";
 
 export type Showtime = {
-  showtimeId?: string;
-  movieId?: string;
-  date?: string;
-  basePrice?: number;
-  time?: string;
-  seats?: any;
-  remainingSeats?: number;
+  availableSeats: any;
+  basePrice: any;
+  date: any;
+  id: any;
+  movieId: any;
+  remainingSeats: any;
+  seats: any;
+  seatsBooked: any;
+  showroomId: any;
+  showtimeId: any;
+  takenSeats: any;
+  time: any;
 }
 
 // Movie type definition for type safety and clarity
@@ -51,7 +56,7 @@ export const MovieProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 export const useMovie = () => {
   const ctx = useContext(MovieContext);
-  if (!ctx) throw new Error("useCheckout must be used within MovieProvider");
+  if (!ctx) throw new Error("useMovie must be used within MovieProvider");
   return ctx;
 };
 

@@ -14,84 +14,69 @@ const TICKET_PRICES: Record<string, number> = {
 
 const ConfirmBooking = () => {
     const router = useRouter();
-    const { checkout, submitCheckout } = useCheckout();
+    const { checkout, submitCheckout, updateCheckoutField } = useCheckout();
     const { movie, showtime } = useMovie();
     const { account } = useAccount();
 
-    // Guest Checkout Info
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [cardNumber, setCardNumber] = useState("");
-    const [expiry, setExpiry] = useState("");
-    const [cvv, setCvv] = useState("");
-
     // Load initial account details for checkout if present
     useEffect(() => {
+        // Only write account and showtime info into checkout when it's missing
+        // This prevents updateCheckoutField from causing repeated updates/re-renders
+        if (!account && !showtime) return;
+
         if (account) {
-            if (account.firstName && account.lastName) setName(`${account.firstName} ${account.lastName}`);
-            if (account.email) setEmail(account.email);
+            if (account.firstName && account.lastName) {
+                if (checkout?.name !== `${account.firstName} ${account.lastName}`) {
+                    updateCheckoutField("name", `${account.firstName} ${account.lastName}`);
+                }
+            }
+            if (account.email) {
+                if (checkout?.email !== account.email) updateCheckoutField("email", account.email);
+            }
             if (account.paymentCards && account.paymentCards[0] != undefined) {
-                setCardNumber(account.paymentCards[0].cardNumber);
-                setExpiry(account.paymentCards[0].expiry);
-                if (account.paymentCards[0].cvv) setCvv(account.paymentCards[0].cvv);
+                // copy the first saved payment card into checkout.card only if different
+                if (JSON.stringify(checkout?.card) !== JSON.stringify(account.paymentCards[0])) {
+                    updateCheckoutField("card", account.paymentCards[0]);
+                }
+            }
+            // Ensure userId is present in checkout so backend validation passes
+            if (account.id) {
+                if (checkout?.userId !== account.id) {
+                    updateCheckoutField("userId", account.id);
+                }
             }
         }
-    }, [])
+
+        // Set showtimeId only when it's not already set to avoid loops
+        if (showtime?.id) {
+            if (checkout?.showtimeId !== showtime.id) {
+                updateCheckoutField("showtimeId", showtime.id);
+            }
+        }
+    }, [account, showtime, checkout?.showtimeId, checkout?.name, checkout?.email, checkout?.card, updateCheckoutField])
 
     const [submitted, setSubmitted] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
-
-    // ------- Helper Functions -------
-    const isValidEmail = (value: string) => {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-    }
-
-    const luhnCheck = (num: string) => {
-        const digits = num.replace(/\s+/g, "").split("").reverse().map(d => parseInt(d, 10));
-        if (digits.some(isNaN)) return false;
-        let sum = 0;
-        for (let i = 0; i < digits.length; i++) {
-            let digit = digits[i];
-            if (i % 2 === 1) {
-                digit *= 2;
-                if (digit > 9) digit -= 9;
-            }
-            sum += digit;
-        }
-        return sum % 10 === 0;
-    }
-
-    const isValidExpiry = (value: string) => {
-        const cleaned = value.trim();
-        const mmYY = /^(0[1-9]|1[0-2])[\/]?(\d{2}|\d{4})$/;
-        const m = cleaned.match(mmYY);
-        if (!m) return false;
-        const month = parseInt(m[1], 10);
-        let year = parseInt(m[2], 10);
-        if (m[2].length === 2) {
-            const now = new Date();
-            const prefix = Math.floor(now.getFullYear() / 100) * 100;
-            year = prefix + year;
-            if (year < now.getFullYear() - 80) year += 100;
-        }
-        const endOfMonth = new Date(year, month, 0);
-        const today = new Date();
-        return endOfMonth >= new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    }
+    const [loading, setLoading] = useState(false);
 
     const validate = () => {
         const e: Record<string, string> = {};
+        const name = (checkout?.name || "").toString();
+        const email = (checkout?.email || "").toString();
+        const cardNumber = (checkout?.card?.cardNumber || "").toString();
+        const expiry = (checkout?.card?.expiry || "").toString();
+        const cvv = (checkout?.card?.cvv || "").toString();
+
         if (!name.trim()) e.name = "Name is required.";
         if (!email.trim()) e.email = "Email is required.";
-        else if (!isValidEmail(email)) e.email = "Enter a valid email address.";
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Enter a valid email address.";
 
         const rawCard = cardNumber.replace(/\s+/g, "");
         if (!rawCard) e.cardNumber = "Card number is required.";
         else if (!/^[0-9]{13,19}$/.test(rawCard)) e.cardNumber = "Card number must be 13–19 digits.";
-        else if (!luhnCheck(rawCard)) e.cardNumber = "Card number appears invalid.";
 
         if (!expiry.trim()) e.expiry = "Expiration date is required.";
-        else if (!isValidExpiry(expiry)) e.expiry = "Enter a valid, non-expired date (MM/YY or MM/YYYY).";
+        else if (!/^(0[1-9]|1[0-2])[\/]?(\d{2}|\d{4})$/.test((expiry || "").trim())) e.expiry = "Enter a valid expiration (MM/YY or MM/YYYY).";
 
         if (!cvv.trim()) e.cvv = "CVV is required.";
         else if (!/^[0-9]{3,4}$/.test(cvv)) e.cvv = "CVV must be 3 or 4 digits.";
@@ -103,14 +88,36 @@ const ConfirmBooking = () => {
     const handleCardInput = (value: string) => {
         const digits = value.replace(/\D/g, "").slice(0, 19);
         const parts = digits.match(/.{1,4}/g) || [];
-        setCardNumber(parts.join(" "));
+        const formatted = parts.join(" ");
+        const newCard = { ...(checkout?.card || {}), cardNumber: formatted, id: checkout?.card?.id ?? "" };
+        updateCheckoutField("card", newCard as any);
     }
 
-    const handleSubmit = (ev: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (ev: React.FormEvent<HTMLFormElement>) => {
         ev.preventDefault();
-        if (validate()) {
-            checkout != null && submitCheckout(checkout)
-            setSubmitted(true);
+        console.log("handleSubmit invoked", { checkout });
+        if (!validate()) {
+            console.log("validation failed", { errors });
+            setErrors((prev) => ({ ...prev, submit: prev.submit || "Please fix errors above." }));
+            return;
+        }
+
+        if (!checkout) return setErrors((prev) => ({ ...prev, submit: "No checkout data available." }));
+
+        try {
+            setLoading(true);
+            const res = await submitCheckout(checkout);
+            console.log("submitCheckout result", res);
+            if (res.success) {
+                setSubmitted(true);
+            } else {
+                setErrors((prev) => ({ ...prev, submit: res.message || "Booking failed" }));
+            }
+        } catch (e: any) {
+            console.error("submitCheckout threw", e);
+            setErrors((prev) => ({ ...prev, submit: e?.message || "Booking failed" }));
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -243,6 +250,16 @@ const ConfirmBooking = () => {
                                 <span className="text-blue-300">${totalPrice.toFixed(2)}</span>
                             </div>
                         </div>
+
+                        {/* Back Button */}
+                        <button
+                            type="button"
+                            onClick={() => router.push("/booking/seat-selection")}
+                            className="cursor-pointer -1 px-6 py-3 rounded-md bg-gray-600 text-white font-bold hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors duration-200"
+                        >
+                            Back to Seat Selection
+                        </button>
+
                     </div>
 
                     {/* Checkout Section */}
@@ -250,14 +267,14 @@ const ConfirmBooking = () => {
                         <h2 className="text-2xl font-bold mb-4 text-blue-300">Checkout</h2>
 
                         <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-3">
                                 {/* Name Input */}
                                 <div>
                                     <h3 className="text-lg font-semibold mb-3 text-gray-200">Full Name</h3>
                                     <input
                                         type="text"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
+                                        value={(checkout?.name) ?? ""}
+                                        onChange={(e) => updateCheckoutField("name", e.target.value)}
                                         className="w-full px-4 py-2 rounded-md bg-[#0b1727] border border-gray-700 text-white mb-4"
                                         placeholder="Jane Doe"
                                         aria-invalid={!!errors.name}
@@ -270,8 +287,8 @@ const ConfirmBooking = () => {
                                     <h3 className="text-lg font-semibold mb-3 text-gray-200">Email Address</h3>
                                     <input
                                         type="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
+                                        value={(checkout?.email) ?? ""}
+                                        onChange={(e) => updateCheckoutField("email", e.target.value)}
                                         className="w-full px-4 py-2 rounded-md bg-[#0b1727] border border-gray-700 text-white mb-4"
                                         placeholder="you@example.com"
                                         aria-invalid={!!errors.email}
@@ -284,7 +301,7 @@ const ConfirmBooking = () => {
                                     <h3 className="text-lg font-semibold mb-3 text-gray-200">Card Number</h3>
                                     <input
                                         inputMode="numeric"
-                                        value={cardNumber}
+                                        value={(checkout?.card?.cardNumber) ?? ""}
                                         onChange={(e) => handleCardInput(e.target.value)}
                                         className="w-full px-4 py-2 rounded-md bg-[#0b1727] border border-gray-700 text-white mb-4"
                                         placeholder="1234 5678 9012 3456"
@@ -297,8 +314,8 @@ const ConfirmBooking = () => {
                                 <div>
                                     <h3 className="text-lg font-semibold mb-3 text-gray-200">Expiration (MM/YY)</h3>
                                     <input
-                                        value={expiry}
-                                        onChange={(e) => setExpiry(e.target.value)}
+                                        value={(checkout?.card?.expiry) ?? ""}
+                                        onChange={(e) => updateCheckoutField("card", { ...(checkout?.card || {}), expiry: e.target.value, id: checkout?.card?.id ?? "" } as any)}
                                         placeholder="MM/YY or MM/YYYY"
                                         className="w-full px-4 py-2 rounded-md bg-[#0b1727] border border-gray-700 text-white mb-4"
                                         aria-invalid={!!errors.expiry}
@@ -311,37 +328,28 @@ const ConfirmBooking = () => {
                                     <h3 className="text-lg font-semibold mb-3 text-gray-200">CVV</h3>
                                     <input
                                         inputMode="numeric"
-                                        value={cvv}
-                                        onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").slice(0,4))}
+                                        value={(checkout?.card?.cvv) ?? ""}
+                                        onChange={(e) => updateCheckoutField("card", { ...(checkout?.card || {}), cvv: e.target.value.replace(/\D/g, "").slice(0,4), id: checkout?.card?.id ?? "" } as any)}
                                         placeholder="123"
                                         className="w-full px-4 py-2 rounded-md bg-[#0b1727] border border-gray-700 text-white mb-4"
                                         aria-invalid={!!errors.cvv}
                                     />
                                     {errors.cvv && <p className="mt-1 text-sm text-red-400">{errors.cvv}</p>}
                                 </div>
-                            </div>
-                        </form>
-                    </div>
 
-                    {/* Action Buttons */}
-                    <div className="col-span-2 flex justify-center">
-                        <div className="bg-[#17233a] rounded-xl shadow-lg p-6 max-w-150 flex justify-center px-20">
-                            <div className="flex flex-row gap-4 justify-center">
-                                <button
-                                    type="button"
-                                    onClick={() => router.push("/booking/seat-selection")}
-                                    className="cursor-pointer -1 px-6 py-3 rounded-md bg-gray-600 text-white font-bold hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors duration-200"
-                                >
-                                    Back to Seat Selection
-                                </button>
+                                {/* Submit Button */}
+                                {errors.submit && (
+                                    <p className="col-span-2 text-sm text-red-400">{errors.submit}</p>
+                                )}
                                 <button
                                     type="submit"
-                                    className="cursor-pointer flex-1 px-6 py-3 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors duration-200"
+                                    className="col-span-2 cursor-pointer flex-1 px-6 py-3 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors duration-200"
+                                    disabled={loading}
                                 >
-                                    Purchase Tickets
+                                    {loading ? "Processing..." : "Purchase Tickets"}
                                 </button>
                             </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
             </div>
