@@ -133,6 +133,18 @@ public class PromotionService {
     }
 
     // ============================================================
+    // 5. Delete a promotion (Admin)
+    // ============================================================
+    public void deletePromotion(String promotionId) {
+
+        if (!promotionRepository.existsById(promotionId)) {
+            throw new IllegalArgumentException("Promotion not found.");
+        }
+
+        promotionRepository.deleteById(promotionId);
+    }
+
+    // ============================================================
     // Helper to send email
     // ============================================================
     private void sendEmail(String to, Promotion promotion) {

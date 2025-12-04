@@ -117,6 +117,29 @@ export default function NewPromotionPage() {
     setShowForm(true); // show pre-filled form when editing
   };
 
+  const handleDeletePromotion = async (promotionId: string) => {
+    const confirmed = window.confirm("Are you sure you want to delete this promotion?");
+    if (!confirmed) return;
+  
+    try {
+      setError(null);
+  
+      const res = await fetch(`${API_BASE}/api/admin/promotions/${promotionId}`, {
+        method: "DELETE",
+      });
+  
+      if (!res.ok && res.status !== 204) {
+        throw new Error(`Failed to delete promotion (status ${res.status})`);
+      }
+  
+      // Remove it from UI immediately
+      setPromotions((prev) => prev.filter((promo) => promo.promotionId !== promotionId));
+  
+    } catch (err: any) {
+      setError(err.message || "Failed to delete promotion");
+    }
+  };
+
   // ---- Create / Update submit ----
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -290,6 +313,14 @@ export default function NewPromotionPage() {
                       className="cursor-pointer px-3 py-1 text-sm rounded-md bg-blue-600 hover:bg-blue-500"
                     >
                       Edit
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeletePromotion(promo.promotionId)}
+                      className="cursor-pointer px-3 py-1 text-sm rounded-md bg-red-600 hover:bg-red-500"
+                    >
+                      Delete
                     </button>
                   </div>
                 </div>

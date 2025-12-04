@@ -70,6 +70,29 @@ export default function ManageMoviesPage() {
     router.push("/admin/manage-movies/add-movie");
   };
 
+  const handleDeleteMovie = async (movieId: string) => {
+    const confirmed = window.confirm("Are you sure you want to delete this movie?");
+    if (!confirmed) return;
+  
+    try {
+      setError(null);
+  
+      const res = await fetch(`${API_BASE}/api/admin/movies/${movieId}`, {
+        method: "DELETE",
+      });
+  
+      // Backend returns 204 or 200 – treat any 2xx as success
+      if (!res.ok) {
+        throw new Error(`Failed to delete movie (status ${res.status})`);
+      }
+  
+      // Remove movie from local state so UI updates immediately
+      setMovies((prev) => prev.filter((m) => m.id !== movieId));
+    } catch (err: any) {
+      setError(err.message || "Failed to delete movie");
+    }
+  };
+
   return (
     <section className="flex items-center justify-center min-h-screen bg-[#0b1727] text-white py-10 md:py-12">
       <div className="w-full max-w-5xl bg-[#17233a] border border-[#1f2d49] rounded-2xl p-8 shadow-lg">
@@ -173,6 +196,27 @@ export default function ManageMoviesPage() {
                 </div>
 
                 {/* Schedule button */}
+                <div className="flex items-start">
+                  <button
+                    onClick={() =>
+                      router.push(`/admin/manage-movies/edit-movie?movieId=${movie.id}`)
+                    }
+                    className="cursor-pointer px-4 py-2 bg-blue-600 hover:bg-blue-500 border border-gray-700 rounded-md text-sm hover:bg-[#0f1c30]"
+                  >
+                    Edit
+                  </button>
+                </div>
+
+
+                <div className="flex items-start">
+                  <button
+                    onClick={() => handleDeleteMovie(movie.id)}
+                    className="cursor-pointer px-4 py-2 bg-red-600 hover:bg-red-500 border border-red-700 rounded-md text-sm"
+                  >
+                    Delete
+                  </button>
+                </div>
+
                 <div className="flex items-start">
                 <button
                   onClick={() => router.push(`/admin/manage-movies/schedule/?movieId=${movie.id}`)}

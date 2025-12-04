@@ -62,6 +62,17 @@ public class AdminPromotionController {
         } catch (Exception ex) {
             return ResponseEntity.badRequest().body("Error: " + ex.getMessage());
         }
-}
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deletePromotion(@PathVariable String id) {
+        try {
+            promotionService.deletePromotion(id);
+            return ResponseEntity.noContent().build(); // 204 success
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
+    }
+
 
 }
