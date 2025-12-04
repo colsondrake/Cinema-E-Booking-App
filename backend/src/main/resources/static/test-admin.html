@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>CES Admin API Tester</title>
+    <title>CES Admin + Order API Tester</title>
     <style>
         body {
             font-family: Arial;
@@ -36,7 +36,7 @@
 
 <body>
 
-    <h1>CES Admin API Tester</h1>
+    <h1>CES Admin + Order API Tester</h1>
     <p>Base URL: <strong>http://localhost:8080</strong></p>
 
     <!-- ============================
@@ -65,7 +65,7 @@
     </div>
 
     <!-- ============================
-         ⭐ GET MOVIE DETAIL
+         ⭐ NEW: GET MOVIE DETAIL
     =============================== -->
     <div class="box">
         <h2>⭐ Get Movie Details (Check showtimes[])</h2>
@@ -82,7 +82,7 @@
         <input id="s_movieId" placeholder="Movie ID"><br>
         <input id="s_showroomId" placeholder="Showroom ID"><br>
         <input id="s_date" type="date"><br>
-        <input id="s_time" type="text" placeholder="Time (e.g. 18:00)"><br>
+        <input id="s_time" placeholder="Time (e.g. 18:00)"><br>
 
         <button onclick="addShowtime()">Add Showtime</button>
     </div>
@@ -103,7 +103,7 @@
     <div class="box">
         <h2>Create Promotion</h2>
         <input id="p_code" placeholder="Promo Code"><br>
-        <input id="p_discount" placeholder="Discount %" type="number"><br>
+        <input id="p_discount" type="number" placeholder="Discount %"><br>
         <input id="p_start" type="date"><br>
         <input id="p_end" type="date"><br>
 
@@ -120,16 +120,6 @@
     </div>
 
     <!-- ============================
-         ⭐ NEW — GET PROMOTION BY CODE
-    =============================== -->
-    <div class="box">
-        <h2>⭐ Get Promotion by Code</h2>
-        <input id="gp_code" placeholder="Promo Code (e.g. PROMO10)"><br>
-        <button onclick="getPromotionByCode()">Get Promotion</button>
-        <pre id="promotion_code_output"></pre>
-    </div>
-
-    <!-- ============================
          SEND PROMOTION EMAILS
     =============================== -->
     <div class="box">
@@ -139,10 +129,20 @@
     </div>
 
     <!-- ============================
+         ⭐ NEW: GET PROMOTION BY CODE
+    =============================== -->
+    <div class="box">
+        <h2>⭐ Lookup Promotion by Code</h2>
+        <input id="promo_lookup_code" placeholder="Promo Code"><br>
+        <button onclick="lookupPromotion()">Lookup</button>
+        <pre id="promo_lookup_output"></pre>
+    </div>
+
+    <!-- ============================
          SEAT API TESTING
     =============================== -->
     <div class="box">
-        <h2>Seat API (User-Side Testing)</h2>
+        <h2>Seat API Testing</h2>
 
         <h3>Get Taken Seats</h3>
         <input id="seat_showtimeId" placeholder="Showtime ID"><br>
@@ -155,12 +155,32 @@
         <button onclick="reserveSeats()">Reserve</button>
     </div>
 
+    <!-- ============================================
+         ⭐⭐⭐ NEW: ORDER API TESTING ⭐⭐⭐
+    ============================================= -->
+    <div class="box">
+        <h2>Create Order</h2>
+        <input id="o_userId" placeholder="User ID"><br>
+        <input id="o_showtimeId" placeholder="Showtime ID"><br>
+        <input id="o_seats" placeholder='Seats (e.g. ["A1","A2"])'><br>
+        <input id="o_total" type="number" placeholder="Total Price"><br>
+
+        <button onclick="createOrder()">Create Order</button>
+        <pre id="order_create_output"></pre>
+    </div>
+
+    <div class="box">
+        <h2>Get User Order History</h2>
+        <input id="o_userId_hist" placeholder="User ID"><br>
+        <button onclick="getUserOrders()">Load History</button>
+        <pre id="order_history_output"></pre>
+    </div>
+
     <script>
         const BASE = "http://localhost:8080";
 
-        // ----------------------
-        // ADD MOVIE
-        // ----------------------
+        // ================= MOVIES =================
+
         function addMovie() {
             const body = {
                 title: m_title.value,
@@ -181,27 +201,21 @@
                 .then(alert);
         }
 
-        // ----------------------
-        // LIST MOVIES
-        // ----------------------
         function listMovies() {
             fetch(`${BASE}/api/admin/movies`)
                 .then(r => r.json())
                 .then(data => movies_output.textContent = JSON.stringify(data, null, 2));
         }
 
-        // ⭐ NEW — Get Movie Detail
         function getMovieDetail() {
             const id = md_movieId.value;
-
             fetch(`${BASE}/api/movies/${id}`)
                 .then(r => r.json())
                 .then(data => movie_detail_output.textContent = JSON.stringify(data, null, 2));
         }
 
-        // ----------------------
-        // ADD SHOWTIME
-        // ----------------------
+        // ================= SHOWTIMES =================
+
         function addShowtime() {
             const movieId = s_movieId.value;
             const showroomId = s_showroomId.value;
@@ -215,20 +229,15 @@
                 .then(alert);
         }
 
-        // ----------------------
-        // LIST SHOWTIMES
-        // ----------------------
         function listShowtimes() {
             const movieId = ls_movieId.value;
-
             fetch(`${BASE}/api/admin/showtimes?movieId=${movieId}`)
                 .then(r => r.json())
                 .then(data => showtimes_output.textContent = JSON.stringify(data, null, 2));
         }
 
-        // ----------------------
-        // CREATE PROMOTION
-        // ----------------------
+        // ================= PROMOTIONS =================
+
         function createPromotion() {
             const body = {
                 promotionCode: p_code.value,
@@ -246,43 +255,31 @@
                 .then(alert);
         }
 
-        // ----------------------
-        // LIST PROMOTIONS
-        // ----------------------
         function listPromotions() {
             fetch(`${BASE}/api/admin/promotions`)
                 .then(r => r.json())
                 .then(data => promotions_output.textContent = JSON.stringify(data, null, 2));
         }
 
-        // ----------------------
-        // ⭐ GET PROMOTION BY CODE
-        // ----------------------
-        function getPromotionByCode() {
-            const code = gp_code.value;
-
-            fetch(`${BASE}/api/promotions/${code}`)
-                .then(r => r.json())
-                .then(data => promotion_code_output.textContent = JSON.stringify(data, null, 2))
-                .catch(err => alert("Error: " + err));
-        }
-
-        // ----------------------
-        // SEND PROMOTION EMAIL
-        // ----------------------
         function sendPromotion() {
             const promoId = sp_promoId.value;
-
-            fetch(`${BASE}/api/admin/promotions/${promoId}/send`, {
-                method: "POST"
-            })
+            fetch(`${BASE}/api/admin/promotions/${promoId}/send`, { method: "POST" })
                 .then(r => r.text())
                 .then(alert);
         }
 
-        // ----------------------
-        // GET TAKEN SEATS
-        // ----------------------
+        // NEW: Lookup promotion by code
+        function lookupPromotion() {
+            const code = promo_lookup_code.value;
+
+            fetch(`${BASE}/api/promotions/${code}`)
+                .then(r => r.json())
+                .then(data => promo_lookup_output.textContent = JSON.stringify(data, null, 2))
+                .catch(err => promo_lookup_output.textContent = err);
+        }
+
+        // ================= SEATS =================
+
         function getTakenSeats() {
             const id = seat_showtimeId.value;
 
@@ -291,12 +288,9 @@
                 .then(data => taken_output.textContent = JSON.stringify(data, null, 2));
         }
 
-        // ----------------------
-        // RESERVE SEATS
-        // ----------------------
         function reserveSeats() {
             const id = reserve_showtimeId.value;
-            const seats = JSON.parse(reserve_seats.value); // array only
+            const seats = JSON.parse(reserve_seats.value);
 
             fetch(`${BASE}/api/showtimes/${id}/reserve`, {
                 method: "POST",
@@ -306,6 +300,40 @@
                 .then(r => r.text())
                 .then(alert);
         }
+
+        // ================= ORDERS =================
+
+        function createOrder() {
+            let seats;
+
+            try { seats = JSON.parse(o_seats.value); }
+            catch { return alert("Seats must be JSON array like [\"A1\",\"A2\"]"); }
+
+            const body = {
+                userId: o_userId.value,
+                showtimeId: o_showtimeId.value,
+                seats: seats,
+                totalPrice: parseFloat(o_total.value)
+            };
+
+            fetch(`${BASE}/api/orders`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            })
+                .then(r => r.text())
+                .then(txt => order_create_output.textContent = txt);
+        }
+
+        function getUserOrders() {
+            const uid = o_userId_hist.value;
+
+            fetch(`${BASE}/api/orders/user/${uid}`)
+                .then(r => r.json())
+                .then(data => order_history_output.textContent = JSON.stringify(data, null, 2))
+                .catch(err => order_history_output.textContent = err);
+        }
+
     </script>
 
 </body>
