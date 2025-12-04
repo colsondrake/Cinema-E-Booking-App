@@ -1,8 +1,11 @@
 package com.example.ces.service;
 
 import com.example.ces.dto.BookingRequestDTO;
+import com.example.ces.dto.BookingRequestDTO.PaymentCardDTO;
 import com.example.ces.model.*;
 import com.example.ces.repository.BookingRepository;
+import com.example.ces.repository.PaymentCardRepository;
+import com.example.ces.repository.PromotionRepository;
 import com.example.ces.repository.TicketRepository;
 import com.example.ces.repository.UserRepository;
 import com.example.ces.repository.ShowtimeRepository;
@@ -18,28 +21,36 @@ import java.util.stream.Collectors;
 
 @Service
 public class BookingService {
-    
+
     private final BookingRepository bookingRepository;
     private final TicketRepository ticketRepository;
     private final ShowtimeRepository showtimeRepository;
     private final Random random = new Random();
-    private final UserRepository userRepository; // Assume this is injected similarly
+    private final UserRepository userRepository;
+    private final PaymentCardRepository paymentCardRepository;
+    private final PromotionRepository promotionRepository;
 
-    public BookingService(BookingRepository bookingRepository, 
-                         TicketRepository ticketRepository,
-                         ShowtimeRepository showtimeRepository, UserRepository userRepository) {
+    public BookingService(BookingRepository bookingRepository,
+            TicketRepository ticketRepository,
+            ShowtimeRepository showtimeRepository,
+            UserRepository userRepository,
+            PaymentCardRepository paymentCardRepository,
+            PromotionRepository promotionRepository) {
         this.bookingRepository = bookingRepository;
         this.ticketRepository = ticketRepository;
         this.showtimeRepository = showtimeRepository;
         this.userRepository = userRepository;
+        this.paymentCardRepository = paymentCardRepository;
+        this.promotionRepository = promotionRepository;
     }
 
     /**
-     * Create a booking with tickets and update showtime's takenSeats
-     * @param mongoShowtimeId MongoDB _id of the showtime
+     * Create a booking with tickets, payment card, promotion, and update showtime's
+     * takenSeats
      */
     public Booking createBooking(BookingRequestDTO request) {
-        if (request == null) throw new IllegalArgumentException("BookingRequestDTO is required");
+        if (request == null)
+            throw new IllegalArgumentException("BookingRequestDTO is required");
 
         // find user
         User user = userRepository.findById(request.getUserId())
@@ -52,7 +63,8 @@ public class BookingService {
                     .filter(s -> s != null && request.getShowtimeId().equals(s.getShowtimeId()))
                     .findFirst();
         }
-        Showtime showtime = showtimeOpt.orElseThrow(() -> new IllegalArgumentException("Showtime not found: " + request.getShowtimeId()));
+        Showtime showtime = showtimeOpt
+                .orElseThrow(() -> new IllegalArgumentException("Showtime not found: " + request.getShowtimeId()));
 
         // build seat and ticket lists from DTO
         List<BookingRequestDTO.TicketSelectionDTO> ticketSelections = request.getTickets();
@@ -89,6 +101,28 @@ public class BookingService {
         booking.setNumberOfTickets(seatNumbers.size());
         booking.setStatus(BookingStatus.Confirmed);
 
+        // Handle payment card if present in request
+        if (request.getPaymentCard() != null) {
+            PaymentCardDTO cardDTO = request.getPaymentCard();
+            PaymentCard card = new PaymentCard();
+            card.setCardNumber(cardDTO.getCardNumber());
+            card.setCardType(cardDTO.getCardType());
+            card.setExpiryDate(cardDTO.getExpiryDate());
+            card.setBillingAddress(cardDTO.getBillingAddress());
+            card.setCardholderName(cardDTO.getCardholderName());
+            card.setUserId(user.getId());
+            PaymentCard savedCard = paymentCardRepository.save(card);
+            booking.setPaymentCard(savedCard);
+        }
+
+        // Handle promotion if present in request
+        if (request.getPromotionCode() != null && !request.getPromotionCode().isEmpty()) {
+            Optional<Promotion> promo = promotionRepository.findByPromotionCodeIgnoreCase(request.getPromotionCode());
+            if (promo.isPresent()) {
+                booking.setPromotion(promo.get());
+            }
+        }
+
         Booking savedBooking = bookingRepository.save(booking);
 
         // create tickets
@@ -101,9 +135,12 @@ public class BookingService {
             ticket.setPrice(ticketPrices.get(i));
             ticket.setBookingId(savedBooking.getBookingId());
 
-            // derive an int showtimeId for Ticket.showtimeId field if possible (best-effort)
+            // derive an int showtimeId for Ticket.showtimeId field if possible
+            // (best-effort)
             try {
-                String numericPart = showtime.getShowtimeId() != null ? showtime.getShowtimeId().replaceAll("[^0-9]", "") : "";
+                String numericPart = showtime.getShowtimeId() != null
+                        ? showtime.getShowtimeId().replaceAll("[^0-9]", "")
+                        : "";
                 if (!numericPart.isEmpty()) {
                     ticket.setShowtimeId(Integer.parseInt(numericPart));
                 } else {
@@ -121,6 +158,12 @@ public class BookingService {
 
         // totals
         double total = savedTickets.stream().mapToDouble(Ticket::getPrice).sum();
+
+        // Apply promotion discount if present
+        if (savedBooking.getPromotion() != null && savedBooking.getPromotion().getDiscountPercent() > 0) {
+            double discount = total * (savedBooking.getPromotion().getDiscountPercent() / 100.0);
+            total = total - discount;
+        }
         savedBooking.setTotalPrice(total);
 
         // update showtime taken seats using Mongo _id
@@ -128,11 +171,12 @@ public class BookingService {
 
         Booking finalBooking = bookingRepository.save(savedBooking);
 
-        System.out.println("Created booking (DTO) id=" + finalBooking.getId() + " bookingId=" + finalBooking.getBookingId());
+        System.out.println(
+                "Created booking (DTO) id=" + finalBooking.getId() + " bookingId=" + finalBooking.getBookingId());
 
         return finalBooking;
     }
-    
+
     /**
      * Delete a booking and remove its seat numbers from showtime's takenSeats
      */
@@ -140,27 +184,27 @@ public class BookingService {
         Optional<Booking> bookingOpt = bookingRepository.findById(bookingId);
         if (bookingOpt.isPresent()) {
             Booking booking = bookingOpt.get();
-            
+
             // Get seat numbers from tickets before deletion
             List<String> seatNumbers = getSeatNumbersFromTickets(booking.getTickets());
-            
+
             System.out.println("Deleting booking " + booking.getBookingId() + " and releasing seats: " + seatNumbers);
-            
+
             // Delete all associated tickets from TICKETS TABLE
             for (Ticket ticket : booking.getTickets()) {
                 ticketRepository.deleteById(ticket.getId());
             }
-            
+
             // Remove seats from showtime's takenSeats - use MongoDB _id
             removeSeatsFromShowtimeTakenSeats(booking.getShowtime().getId(), seatNumbers);
-            
+
             // Delete booking
             bookingRepository.deleteById(bookingId);
-            
+
             System.out.println("✅ Deleted booking and released seats from takenSeats: " + seatNumbers);
         }
     }
-    
+
     /**
      * Update booking status and handle seat management for cancellations
      */
@@ -169,35 +213,35 @@ public class BookingService {
         if (bookingOpt.isEmpty()) {
             throw new IllegalArgumentException("Booking not found: " + bookingId);
         }
-        
+
         Booking booking = bookingOpt.get();
         BookingStatus oldStatus = booking.getStatus();
-        
+
         if (oldStatus == newStatus) {
             return booking; // No change needed
         }
-        
+
         List<String> seatNumbers = getSeatNumbersFromTickets(booking.getTickets());
-        
-        System.out.println("Updating booking " + booking.getBookingId() + " status from " + 
-                         oldStatus + " to " + newStatus + " (seats: " + seatNumbers + ")");
-        
+
+        System.out.println("Updating booking " + booking.getBookingId() + " status from " +
+                oldStatus + " to " + newStatus + " (seats: " + seatNumbers + ")");
+
         // Handle seat management based on status change - use MongoDB _id
         if (newStatus == BookingStatus.Cancelled && oldStatus != BookingStatus.Cancelled) {
             // Booking being cancelled - remove seats from takenSeats
             removeSeatsFromShowtimeTakenSeats(booking.getShowtime().getId(), seatNumbers);
             System.out.println("Released seats from takenSeats due to cancellation: " + seatNumbers);
-            
+
         } else if (oldStatus == BookingStatus.Cancelled && newStatus != BookingStatus.Cancelled) {
             // Booking being reactivated - add seats back to takenSeats
             addSeatsToShowtimeTakenSeats(booking.getShowtime().getId(), seatNumbers);
             System.out.println("Added seats back to takenSeats due to reactivation: " + seatNumbers);
         }
-        
+
         booking.setStatus(newStatus);
         return bookingRepository.save(booking);
     }
-    
+
     // Method to retrieve all Bookings for a showtime
     public List<Booking> getBookingsByShowtimeId(String mongoShowtimeId) {
         // use repository query that looks up booking.showtime.id
@@ -208,52 +252,54 @@ public class BookingService {
 
     /**
      * Sync all showtime takenSeats with actual booked tickets (repair function)
+     * 
      * @param mongoShowtimeId MongoDB _id of the showtime
      */
     public void syncShowtimeTakenSeatsWithBookings(String mongoShowtimeId) {
         System.out.println("Syncing takenSeats for showtime " + mongoShowtimeId + " with actual bookings...");
-        
+
         Optional<Showtime> showtimeOpt = showtimeRepository.findById(mongoShowtimeId);
         if (showtimeOpt.isEmpty()) {
             throw new IllegalArgumentException("Showtime not found: " + mongoShowtimeId);
         }
-        
+
         Showtime showtime = showtimeOpt.get();
-        
+
         // Get all confirmed bookings for this showtime using MongoDB _id
         List<Booking> confirmedBookings = bookingRepository.findAll().stream()
                 .filter(booking -> booking.getShowtime().getId().equals(mongoShowtimeId))
-                .filter(booking -> booking.getStatus() == BookingStatus.Confirmed || 
-                                 booking.getStatus() == BookingStatus.Pending)
+                .filter(booking -> booking.getStatus() == BookingStatus.Confirmed ||
+                        booking.getStatus() == BookingStatus.Pending)
                 .toList();
-        
+
         // Collect all seat numbers from confirmed bookings
         List<String> actualTakenSeats = new ArrayList<>();
         for (Booking booking : confirmedBookings) {
             actualTakenSeats.addAll(getSeatNumbersFromTickets(booking.getTickets()));
         }
-        
+
         // Remove duplicates
         actualTakenSeats = actualTakenSeats.stream().distinct().collect(Collectors.toList());
-        
-        System.out.println("Found " + actualTakenSeats.size() + " taken seats from " + 
-                         confirmedBookings.size() + " confirmed bookings");
+
+        System.out.println("Found " + actualTakenSeats.size() + " taken seats from " +
+                confirmedBookings.size() + " confirmed bookings");
         System.out.println("Actual taken seats: " + actualTakenSeats);
-        
+
         // Update showtime with correct takenSeats
         showtime.setTakenSeats(actualTakenSeats);
         showtime.setSeatsBooked(actualTakenSeats.size());
-        
+
         if (showtime.getSeats() != null) {
             showtime.setAvailableSeats(showtime.getSeats().size() - actualTakenSeats.size());
         }
-        
+
         showtimeRepository.save(showtime);
         System.out.println("✅ Synced showtime " + mongoShowtimeId + " takenSeats with actual bookings");
     }
-    
+
     /**
      * Get booking statistics showing seat usage
+     * 
      * @param mongoShowtimeId MongoDB _id of the showtime
      */
     public BookingStatistics getBookingStatistics(String mongoShowtimeId) {
@@ -261,61 +307,60 @@ public class BookingService {
         if (showtimeOpt.isEmpty()) {
             throw new IllegalArgumentException("Showtime not found: " + mongoShowtimeId);
         }
-        
+
         Showtime showtime = showtimeOpt.get();
-        
+
         // Get all bookings for this showtime using MongoDB _id
         List<Booking> allBookings = bookingRepository.findAll().stream()
                 .filter(booking -> booking.getShowtime().getId().equals(mongoShowtimeId))
                 .toList();
-        
+
         // Count by status
         long confirmedBookings = allBookings.stream().filter(b -> b.getStatus() == BookingStatus.Confirmed).count();
         long pendingBookings = allBookings.stream().filter(b -> b.getStatus() == BookingStatus.Pending).count();
         long cancelledBookings = allBookings.stream().filter(b -> b.getStatus() == BookingStatus.Cancelled).count();
-        
+
         // Count seats
         int totalSeats = showtime.getSeats() != null ? showtime.getSeats().size() : 0;
         int takenSeats = showtime.getTakenSeats() != null ? showtime.getTakenSeats().size() : 0;
         int availableSeats = totalSeats - takenSeats;
-        
+
         return new BookingStatistics(
-            mongoShowtimeId, 
-            allBookings.size(), 
-            confirmedBookings, 
-            pendingBookings, 
-            cancelledBookings,
-            totalSeats, 
-            takenSeats, 
-            availableSeats,
-            showtime.getTakenSeats()
-        );
+                mongoShowtimeId,
+                allBookings.size(),
+                confirmedBookings,
+                pendingBookings,
+                cancelledBookings,
+                totalSeats,
+                takenSeats,
+                availableSeats,
+                showtime.getTakenSeats());
     }
-    
+
     // ============================
     // Private Helper Methods
     // ============================
-    
+
     private void validateSeatsAvailable(String mongoShowtimeId, List<String> seatNumbers) {
         Optional<Showtime> showtimeOpt = showtimeRepository.findById(mongoShowtimeId);
         if (showtimeOpt.isEmpty()) {
             throw new IllegalArgumentException("Showtime not found: " + mongoShowtimeId);
         }
-        
+
         Showtime showtime = showtimeOpt.get();
-        
+
         // Check if showtime has seats initialized
         if (showtime.getSeats() == null || showtime.getSeats().isEmpty()) {
             throw new IllegalStateException("Showtime has no seats configured");
         }
-        
+
         // Check if all requested seats exist
         for (String seatNumber : seatNumbers) {
             if (!showtime.getSeats().contains(seatNumber)) {
                 throw new IllegalArgumentException("Seat " + seatNumber + " does not exist for this showtime");
             }
         }
-        
+
         // Check if any seats are already taken
         if (showtime.getTakenSeats() != null) {
             for (String seatNumber : seatNumbers) {
@@ -326,73 +371,72 @@ public class BookingService {
         }
     }
 
-    
     private void addSeatsToShowtimeTakenSeats(String mongoShowtimeId, List<String> seatNumbers) {
         Optional<Showtime> showtimeOpt = showtimeRepository.findById(mongoShowtimeId);
         if (showtimeOpt.isEmpty()) {
             return;
         }
-        
+
         Showtime showtime = showtimeOpt.get();
-        
+
         // Initialize takenSeats if null
         if (showtime.getTakenSeats() == null) {
             showtime.setTakenSeats(new ArrayList<>());
         }
-        
+
         // Create a mutable copy and add new seats
         List<String> takenSeats = new ArrayList<>(showtime.getTakenSeats());
-        
+
         for (String seatNumber : seatNumbers) {
             if (!takenSeats.contains(seatNumber)) {
                 takenSeats.add(seatNumber);
             }
         }
-        
+
         // Update showtime
         showtime.setTakenSeats(takenSeats);
         showtime.setSeatsBooked(takenSeats.size());
-        
+
         if (showtime.getSeats() != null) {
             showtime.setAvailableSeats(showtime.getSeats().size() - takenSeats.size());
         }
-        
+
         showtimeRepository.save(showtime);
-        
+
         System.out.println("Added seats to takenSeats for showtime " + mongoShowtimeId + ": " + seatNumbers);
         System.out.println("Total takenSeats now: " + takenSeats.size());
     }
-    
+
     private void removeSeatsFromShowtimeTakenSeats(String mongoShowtimeId, List<String> seatNumbers) {
         Optional<Showtime> showtimeOpt = showtimeRepository.findById(mongoShowtimeId);
         if (showtimeOpt.isEmpty()) {
             return;
         }
-        
+
         Showtime showtime = showtimeOpt.get();
-        
+
         if (showtime.getTakenSeats() == null) {
             showtime.setTakenSeats(new ArrayList<>());
         }
-        
+
         // Create a mutable copy and remove seats
         List<String> takenSeats = new ArrayList<>(showtime.getTakenSeats());
         takenSeats.removeAll(seatNumbers);
-        
+
         // Update showtime
         showtime.setTakenSeats(takenSeats);
         showtime.setSeatsBooked(takenSeats.size());
-        
+
         if (showtime.getSeats() != null) {
             showtime.setAvailableSeats(showtime.getSeats().size() - takenSeats.size());
         }
-        
+
         showtimeRepository.save(showtime);
-        
+
         System.out.println("Removed seats from takenSeats for showtime " + mongoShowtimeId + ": " + seatNumbers);
         System.out.println("Total takenSeats now: " + takenSeats.size());
     }
-    
+
     private List<String> getSeatNumbersFromTickets(List<Ticket> tickets) {
         if (tickets == null) {
             return new ArrayList<>();
@@ -405,12 +449,11 @@ public class BookingService {
     private int generateBookingId() {
         return 100000 + random.nextInt(900000);
     }
-    
+
     private int generateTicketId() {
         return 1000 + random.nextInt(9000);
     }
-    
-    
+
     // Inner class for booking statistics
     public static class BookingStatistics {
         private final String showtimeId;
@@ -423,9 +466,9 @@ public class BookingService {
         private final int availableSeats;
         private final List<String> takenSeatNumbers;
 
-        public BookingStatistics(String showtimeId, int totalBookings, long confirmedBookings, 
-                               long pendingBookings, long cancelledBookings, int totalSeats, 
-                               int takenSeats, int availableSeats, List<String> takenSeatNumbers) {
+        public BookingStatistics(String showtimeId, int totalBookings, long confirmedBookings,
+                long pendingBookings, long cancelledBookings, int totalSeats,
+                int takenSeats, int availableSeats, List<String> takenSeatNumbers) {
             this.showtimeId = showtimeId;
             this.totalBookings = totalBookings;
             this.confirmedBookings = confirmedBookings;
@@ -438,17 +481,42 @@ public class BookingService {
         }
 
         // Getters
-        public String getShowtimeId() { return showtimeId; }
-        public int getTotalBookings() { return totalBookings; }
-        public long getConfirmedBookings() { return confirmedBookings; }
-        public long getPendingBookings() { return pendingBookings; }
-        public long getCancelledBookings() { return cancelledBookings; }
-        public int getTotalSeats() { return totalSeats; }
-        public int getTakenSeats() { return takenSeats; }
-        public int getAvailableSeats() { return availableSeats; }
-        public List<String> getTakenSeatNumbers() { return takenSeatNumbers; }
-    }
+        public String getShowtimeId() {
+            return showtimeId;
+        }
 
+        public int getTotalBookings() {
+            return totalBookings;
+        }
+
+        public long getConfirmedBookings() {
+            return confirmedBookings;
+        }
+
+        public long getPendingBookings() {
+            return pendingBookings;
+        }
+
+        public long getCancelledBookings() {
+            return cancelledBookings;
+        }
+
+        public int getTotalSeats() {
+            return totalSeats;
+        }
+
+        public int getTakenSeats() {
+            return takenSeats;
+        }
+
+        public int getAvailableSeats() {
+            return availableSeats;
+        }
+
+        public List<String> getTakenSeatNumbers() {
+            return takenSeatNumbers;
+        }
+    }
 
     public Booking getBookingById(String id) {
         return bookingRepository.findById(id)
@@ -456,7 +524,8 @@ public class BookingService {
     }
 
     public List<Booking> getBookingsByUserId(String userId) {
-        if (userId == null) return List.of();
+        if (userId == null)
+            return List.of();
         // use repository query that looks up booking.user.id
         return bookingRepository.findByUser_Id(userId);
     }
