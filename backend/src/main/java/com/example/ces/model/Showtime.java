@@ -12,19 +12,19 @@ import org.springframework.data.annotation.Id;
 public class Showtime {
 
     @Id
-    private String showtimeId; // MUST be String for MongoDB
-
+    private String id; // MUST be String for MongoDB
+    private String showtimeId; // business logic ID
     private String movieId; // was int → MUST be String to match Movie.id
     private LocalDate date; // you can keep this for older requirements
     private int availableSeats;
     private double basePrice;
     private int seatsBooked;
     private String time;
+    private String showroomId;
 
     // Changed from List<Seat> to List<String> - all seats as seat numbers only
     private List<String> seats = new ArrayList<>();
 
-    private String showroomId; // REQUIRED for Sprint 3 scheduling
 
     // MUST BE List<String> for seat-selection API
     private List<String> takenSeats = new ArrayList<>();
@@ -59,6 +59,15 @@ public class Showtime {
         return false;
     }
 
+    // add these accessors so other services can use showtime.getId()
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+    
     public boolean checkAvailability() {
         return availableSeats > 0;
     }
