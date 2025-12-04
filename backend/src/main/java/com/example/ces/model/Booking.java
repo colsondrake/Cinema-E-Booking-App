@@ -19,6 +19,7 @@ public class Booking {
     private PaymentCard paymentCard;
     private Promotion promotion;
     private BookingStatus status;
+    private double totalPrice;
 
     // Constructors
     public Booking() {
@@ -57,8 +58,26 @@ public class Booking {
         this.showtime = showtime;
     }
 
+    public String getShowtimeId() {
+        if (showtime != null) {
+            return showtime.getShowtimeId();
+        }
+        return null;
+    }
     public LocalDate getBookingDate() {
         return bookingDate;
+    }
+    
+    public double setTotalPrice() {
+        return totalPrice;
+    }
+    
+    public double getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(double totalPrice) {
+        this.totalPrice = totalPrice;
     }
 
     public void setBookingDate(LocalDate bookingDate) {

@@ -1,5 +1,6 @@
 package com.example.ces.service;
 
+import com.example.ces.dto.BookingRequestDTO;
 import com.example.ces.model.*;
 import com.example.ces.repository.BookingRepository;
 import com.example.ces.repository.UserRepository;
@@ -45,6 +46,9 @@ public class BookingDataLoader implements CommandLineRunner {
             System.out.println("Tickets table cleared - will be populated through bookings only");
         }
         
+        // Clear taken seats for all showtimes (dev-only convenience)
+        clearAllShowtimeTakenSeats();
+        
         // Ensure existing showtimes have the 10x10 seat layout
         updateExistingShowtimesWithSeats();
         
@@ -55,6 +59,37 @@ public class BookingDataLoader implements CommandLineRunner {
         
         // Verify the tickets table is populated correctly
         verifyTicketsTable();
+    }
+    
+    private void clearAllShowtimeTakenSeats() {
+        List<Showtime> allShowtimes = showtimeRepository.findAll();
+        if (allShowtimes == null || allShowtimes.isEmpty()) {
+            System.out.println("No showtimes to clear takenSeats for.");
+            return;
+        }
+
+        System.out.println("Clearing takenSeats for " + allShowtimes.size() + " showtimes...");
+        for (Showtime s : allShowtimes) {
+            boolean hadTaken = s.getTakenSeats() != null && !s.getTakenSeats().isEmpty();
+            if (hadTaken) {
+                s.setTakenSeats(new ArrayList<>());
+                s.setSeatsBooked(0);
+                int totalSeats = (s.getSeats() == null) ? 0 : s.getSeats().size();
+                s.setAvailableSeats(totalSeats);
+            } else if (s.getSeats() != null && s.getAvailableSeats() == 0 && s.getSeatsBooked() == 0) {
+                s.setAvailableSeats(s.getSeats().size());
+            }
+        }
+
+        showtimeRepository.saveAll(allShowtimes);
+        System.out.println("Cleared takenSeats for all showtimes.");
+    }
+
+    private Showtime findShowtimeByMongoId(String mongoId) {
+        if (mongoId == null) return null;
+        
+        return showtimeRepository.findById(mongoId)
+                .orElse(null);
     }
 
     private void loadDummyBookingsWithTickets() {
@@ -72,44 +107,92 @@ public class BookingDataLoader implements CommandLineRunner {
 
         int showtimeIndex = 0;
         
-        // Each booking will create tickets in the tickets table
-        createBookingAndPopulateTickets(users.get(0), existingShowtimes.get(showtimeIndex % existingShowtimes.size()), 
+        // Use actual showtimes from database - no hardcoded IDs
+        Showtime showtime1 = existingShowtimes.get(showtimeIndex % existingShowtimes.size());
+        createBookingAndPopulateTickets(users.get(0), showtime1, 
+                Arrays.asList("A3", "A4"), 
+                Arrays.asList(TicketType.ADULT, TicketType.ADULT),
+                BookingStatus.Confirmed, "Friends outing");
+        showtimeIndex++;
+        
+        Showtime showtime2 = existingShowtimes.get(showtimeIndex % existingShowtimes.size());
+        createBookingAndPopulateTickets(users.get(1), showtime2, 
+                Arrays.asList("B1"), 
+                Arrays.asList(TicketType.ADULT),
+                BookingStatus.Confirmed, "Solo booking");
+        showtimeIndex++;
+        
+        Showtime showtime3 = existingShowtimes.get(showtimeIndex % existingShowtimes.size());
+        createBookingAndPopulateTickets(users.get(1), showtime3, 
+                Arrays.asList("G7"), 
+                Arrays.asList(TicketType.ADULT),
+                BookingStatus.Confirmed, "Solo booking");
+        showtimeIndex++;
+        
+        Showtime showtime4 = existingShowtimes.get(showtimeIndex % existingShowtimes.size());
+        createBookingAndPopulateTickets(users.get(0), showtime4, 
                 Arrays.asList("A1", "A2"), 
                 Arrays.asList(TicketType.ADULT, TicketType.CHILD),
                 BookingStatus.Confirmed, "Family movie night");
         showtimeIndex++;
         
-        createBookingAndPopulateTickets(users.get(1), existingShowtimes.get(showtimeIndex % existingShowtimes.size()), 
+        Showtime showtime5 = existingShowtimes.get(showtimeIndex % existingShowtimes.size());
+        createBookingAndPopulateTickets(users.get(1), showtime5, 
                 Arrays.asList("B5"), 
                 Arrays.asList(TicketType.ADULT),
                 BookingStatus.Confirmed, "Solo movie");
         showtimeIndex++;
         
-        createBookingAndPopulateTickets(users.get(2), existingShowtimes.get(showtimeIndex % existingShowtimes.size()), 
+        Showtime showtime6 = existingShowtimes.get(showtimeIndex % existingShowtimes.size());
+        createBookingAndPopulateTickets(users.get(2), showtime6, 
                 Arrays.asList("C1", "C2", "C3"), 
                 Arrays.asList(TicketType.ADULT, TicketType.SENIOR, TicketType.CHILD),
                 BookingStatus.Pending, "Group outing");
         showtimeIndex++;
         
-        createBookingAndPopulateTickets(users.get(0), existingShowtimes.get(showtimeIndex % existingShowtimes.size()), 
+        Showtime showtime7 = existingShowtimes.get(showtimeIndex % existingShowtimes.size());
+        createBookingAndPopulateTickets(users.get(0), showtime7, 
                 Arrays.asList("D4", "D5"), 
                 Arrays.asList(TicketType.ADULT, TicketType.ADULT),
                 BookingStatus.Confirmed, "Date night");
         showtimeIndex++;
         
-        createBookingAndPopulateTickets(users.get(1), existingShowtimes.get(showtimeIndex % existingShowtimes.size()), 
+        Showtime showtime8 = existingShowtimes.get(showtimeIndex % existingShowtimes.size());
+        createBookingAndPopulateTickets(users.get(1), showtime8, 
                 Arrays.asList("F1", "F2", "G8", "H10"), 
                 Arrays.asList(TicketType.ADULT, TicketType.ADULT, TicketType.CHILD, TicketType.CHILD),
                 BookingStatus.Cancelled, "Group booking - cancelled");
+        showtimeIndex++;
 
-        createBookingAndPopulateTickets(users.get(2), existingShowtimes.get(showtimeIndex % existingShowtimes.size()), 
+        Showtime showtime9 = existingShowtimes.get(showtimeIndex % existingShowtimes.size());
+        createBookingAndPopulateTickets(users.get(2), showtime9, 
                 Arrays.asList("J1", "J10", "E5"), 
                 Arrays.asList(TicketType.SENIOR, TicketType.ADULT, TicketType.CHILD),
                 BookingStatus.Confirmed, "Mixed seating");
-
-        System.out.println("✅ Completed loading bookings - tickets table populated from bookings only");
+        
+        // Manual Dark Knight 1:30 PM bookings
+        System.out.println("\n--- MANUAL DARK KNIGHT 1:30 PM BOOKINGS ---");
+        Showtime darkKnightShowtime = findShowtimeByMongoId("693131f53bb59f0bf735c6c0");
+        
+        if (darkKnightShowtime != null) {
+            createBookingAndPopulateTickets(users.get(0), darkKnightShowtime, 
+                    Arrays.asList("A5", "A6"), 
+                    Arrays.asList(TicketType.ADULT, TicketType.ADULT),
+                    BookingStatus.Confirmed, "Dark Knight - 1:30 PM booking 1");
+            
+            createBookingAndPopulateTickets(users.get(1), darkKnightShowtime, 
+                    Arrays.asList("B3", "B4", "B5"), 
+                    Arrays.asList(TicketType.ADULT, TicketType.CHILD, TicketType.CHILD),
+                    BookingStatus.Confirmed, "Dark Knight - 1:30 PM booking 2");
+            
+            createBookingAndPopulateTickets(users.get(2), darkKnightShowtime, 
+                    Arrays.asList("C8"), 
+                    Arrays.asList(TicketType.SENIOR),
+                    BookingStatus.Confirmed, "Dark Knight - 1:30 PM booking 3");
+        } else {
+            System.out.println("⚠️  Dark Knight 1:30 PM showtime not found - skipping manual bookings");
+        }
     }
-
     private void createBookingAndPopulateTickets(User user, Showtime showtime, 
                                                List<String> seatNumbers, 
                                                List<TicketType> ticketTypes,
@@ -118,26 +201,26 @@ public class BookingDataLoader implements CommandLineRunner {
         System.out.println("\n--- Creating booking: " + description + " ---");
         System.out.println("This will add " + seatNumbers.size() + " tickets to the tickets table");
         
-        // Calculate individual ticket prices
-        double basePrice = showtime.getBasePrice();
-        List<Double> ticketPrices = new ArrayList<>();
-        
-        for (TicketType ticketType : ticketTypes) {
-            double multiplier = switch (ticketType) {
-                case ADULT -> 1.0;
-                case SENIOR -> 0.8;
-                case CHILD -> 0.7;
-            };
-            ticketPrices.add(basePrice * multiplier);
+        // Build BookingRequestDTO to call new BookingService.createBooking(BookingRequestDTO)
+        BookingRequestDTO request = new BookingRequestDTO();
+        request.setShowtimeId(showtime.getId()); // use MongoDB _id for showtime
+        request.setUserId(user.getId());
+
+        List<BookingRequestDTO.TicketSelectionDTO> selections = new ArrayList<>();
+        for (int i = 0; i < seatNumbers.size(); i++) {
+            BookingRequestDTO.TicketSelectionDTO sel = new BookingRequestDTO.TicketSelectionDTO();
+            sel.setSeatNumber(seatNumbers.get(i));
+            sel.setTicketType(ticketTypes.get(i));
+            selections.add(sel);
         }
-        
+        request.setTickets(selections);
+
         try {
-            // BookingService will create the booking AND add tickets to tickets table
-            Booking savedBooking = bookingService.createBooking(user, showtime, seatNumbers, ticketTypes, ticketPrices);
-            
-            // Update booking status if needed
+            Booking savedBooking = bookingService.createBooking(request);
+     
+            // Update booking status if needed (bookingService.updateBookingStatus expects booking.mongo id)
             if (savedBooking.getStatus() != status) {
-                savedBooking = bookingService.updateBookingStatus(savedBooking.getId(), status);
+                bookingService.updateBookingStatus(savedBooking.getId(), status);
             }
             
             System.out.println("✅ Booking " + savedBooking.getBookingId() + " created");
@@ -158,14 +241,12 @@ public class BookingDataLoader implements CommandLineRunner {
         System.out.println("📊 Tickets in tickets table: " + allTickets.size());
         System.out.println("📊 Bookings in bookings table: " + allBookings.size());
         
-        // Count tickets from bookings
         int ticketsFromBookings = allBookings.stream()
                 .mapToInt(booking -> booking.getTickets() != null ? booking.getTickets().size() : 0)
                 .sum();
         
         System.out.println("📊 Tickets referenced by bookings: " + ticketsFromBookings);
         
-        // Verify all tickets have booking links
         int linkedTickets = 0;
         int orphanedTickets = 0;
         
@@ -177,7 +258,6 @@ public class BookingDataLoader implements CommandLineRunner {
                 linkedTickets++;
             } else {
                 orphanedTickets++;
-                System.out.println("⚠️  Orphaned ticket: " + ticket.getTicketId());
             }
         }
         
@@ -186,18 +266,6 @@ public class BookingDataLoader implements CommandLineRunner {
         
         if (orphanedTickets == 0 && allTickets.size() == ticketsFromBookings) {
             System.out.println("🎉 PERFECT: All tickets in tickets table are from bookings!");
-        }
-        
-        // Show sample tickets
-        if (!allTickets.isEmpty()) {
-            System.out.println("\n📋 Sample tickets from tickets table:");
-            allTickets.stream().limit(5).forEach(ticket -> {
-                System.out.println("   - Ticket " + ticket.getTicketId() + 
-                                 ": Seat " + ticket.getSeatNumber() + 
-                                 ", Booking " + ticket.getBookingId() + 
-                                 ", Type " + ticket.getType() + 
-                                 ", Price $" + String.format("%.2f", ticket.getPrice()));
-            });
         }
         
         System.out.println("=====================================\n");
@@ -211,8 +279,6 @@ public class BookingDataLoader implements CommandLineRunner {
         
         for (Showtime showtime : allShowtimes) {
             if (showtime.getSeats() == null || showtime.getSeats().isEmpty()) {
-                System.out.println("Updating showtime " + showtime.getShowtimeId() + " with 10x10 seats");
-                
                 List<String> seats = create10x10SeatLayout();
                 showtime.setSeats(seats);
                 
