@@ -133,6 +133,9 @@ public class UserController {
             resp.put("firstName", created.getFirstName());
             resp.put("lastName", created.getLastName());
             resp.put("email", created.getEmail());
+            if (created.getHomeAddress() != null) {
+                resp.put("homeAddress", created.getHomeAddress());
+            }
             return ResponseEntity.status(HttpStatus.CREATED).body(resp);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -223,6 +226,31 @@ public class UserController {
                 .map(user -> ResponseEntity.ok(user.getPaymentCards()))
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    /** Delete a specific payment card for a user */
+    @DeleteMapping("/{id}/payment-cards/{cardId}")
+    public ResponseEntity<?> deletePaymentCard(
+            @PathVariable String id,
+            @PathVariable String cardId,
+            @RequestHeader(value = "X-User-Id", required = false) String callerId,
+            @RequestHeader(value = "X-User-Role", required = false) String callerRole) {
+
+        if (!isAuthorized(callerId, callerRole, id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Not authorized"));
+        }
+
+        try {
+            userService.deletePaymentCard(id, cardId);
+            return ResponseEntity.ok(Map.of("message", "Payment card removed successfully"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An unexpected error occurred while deleting payment card"));
+        }
+    }
+
 
     /** Change password */
     @PostMapping("/{id}/change-password")

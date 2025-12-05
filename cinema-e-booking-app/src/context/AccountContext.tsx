@@ -43,6 +43,7 @@ type AccountContextType = {
   logout: () => void;
   updateAccount: (acc: Account) => Promise<{ success: boolean; message?: string }>;
   addCard: (card: PaymentCard) => Promise<{ success: boolean; message?: string }>; // returns success and optional message
+  deleteCard: (cardId: string)=> Promise<{ success: boolean; message?: string }>
 };
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
@@ -77,7 +78,9 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return "UNKNOWN";
   };
 
-  const createAccount = async (acc: Account): Promise<{ success: boolean; message?: string }> => {
+  const createAccount = async (
+    acc: Account
+  ): Promise<{ success: boolean; message?: string }> => {
     try {
       // Map frontend Account to expected registration DTO
       const payload: any = {
@@ -87,26 +90,40 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         password: acc.password,
         confirmPassword: acc.password,
         phone: (acc as any).phone || undefined,
-        address: acc.address || undefined,
-        subscribeToPromotions: false,
+  
+        // ✅ backend expects "homeAddress" with "zipCode"
+        homeAddress: acc.address
+          ? {
+              street: acc.address.street,
+              city: acc.address.city,
+              state: acc.address.state,
+              zipCode: acc.address.postalCode, // map postalCode -> zipCode
+              country: acc.address.country,
+            }
+          : undefined,
+  
+        subscribeToPromotions: acc.isSubscribedToPromotions ?? false,
       };
-
-      // Remove undefined properties so backend won't validate empty phone
-      Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
-
+  
+      // Remove undefined properties so backend won't validate empty phone/homeAddress
+      Object.keys(payload).forEach(
+        (k) => payload[k] === undefined && delete payload[k]
+      );
+  
       const res = await fetch("http://localhost:8080/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
+  
       if (!res.ok) {
         // Try to parse JSON error message and return it
         try {
           const err = await res.json();
-          // If validation errors are present, synthesize a message
           if (err && err.errors && Array.isArray(err.errors)) {
-            const messages = err.errors.map((e: any) => e.defaultMessage || e.message).join("; ");
+            const messages = err.errors
+              .map((e: any) => e.defaultMessage || e.message)
+              .join("; ");
             return { success: false, message: messages };
           }
           if (err && err.error) return { success: false, message: err.error };
@@ -116,26 +133,63 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
         return { success: false, message: `Server returned ${res.status}` };
       }
-
-      // If backend returns created user, use it; otherwise use submitted account
+  
       let created: Account | null = null;
+  
       try {
-        const json = await res.json();
-        // backend may return full user object or wrapper; try to find sensible fields
-        if (json) {
-          created = {
-            firstName: json.firstName || acc.firstName,
-            lastName: json.lastName || acc.lastName,
-            email: json.email || acc.email,
-            password: acc.password,
-            paymentCards: acc.paymentCards || [],
-          } as Account;
-        }
+        const json: any = await res.json();
+  
+        const backendAddr =
+          json.homeAddress || json.address || json.home_address || null;
+  
+        const mappedAddress = backendAddr
+          ? {
+              street: backendAddr.street ?? acc.address?.street ?? "",
+              city: backendAddr.city ?? acc.address?.city ?? "",
+              state: backendAddr.state ?? acc.address?.state ?? "",
+              postalCode:
+                backendAddr.postalCode ??
+                backendAddr.zipCode ??
+                acc.address?.postalCode ??
+                "",
+              country: backendAddr.country ?? acc.address?.country ?? "",
+            }
+          : acc.address;
+  
+        created = {
+          id: json.id || acc.id || "",
+          firstName: json.firstName || acc.firstName,
+          lastName: json.lastName || acc.lastName,
+          email: json.email || acc.email,
+          password: acc.password,
+  
+          // session flags
+          isLoggedIn: true,
+          emailVerified: json.emailVerified ?? false,
+          isActive: json.isActive ?? true,
+          role: json.role || "USER",
+  
+          // address + promos
+          address: mappedAddress,
+          isSubscribedToPromotions:
+            json.isSubscribedToPromotions ??
+            acc.isSubscribedToPromotions ??
+            false,
+  
+          paymentCards: acc.paymentCards || [],
+        };
       } catch (e) {
-        // no json body: fallback
-        created = acc;
+        // No JSON body or parse error – fall back to what user entered
+        created = {
+          ...(acc as Account),
+          id: acc.id || "",
+          isLoggedIn: true,
+          emailVerified: false,
+          isActive: true,
+          role: acc.role || "USER",
+        };
       }
-
+  
       setAccount(created || acc);
       return { success: true };
     } catch (e) {
@@ -143,6 +197,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return { success: false, message: String(e) };
     }
   };
+  
 
   const login = async (email: string, password: string) => {
     try {
@@ -174,34 +229,82 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       const json = await res.json();
 
+      console.log("LOGIN JSON:", json);
+      console.log("LOGIN paymentCards:", json.paymentCards);
+      
       // Map server response to frontend Account shape
       const backendCards: any[] = Array.isArray(json.paymentCards) ? json.paymentCards : [];
       const mappedCards: PaymentCard[] = backendCards.map((c) => ({
         id: c.id || (c.lastFourDigits ? `card-${c.lastFourDigits}` : String(Math.random()).slice(2)),
-        cardholderName: c.cardholderName || c.cardholderName || "",
-        // store masked card number based on returned lastFourDigits
+        cardholderName: c.cardholderName || "",
         cardNumber: c.cardNumber || (c.lastFourDigits ? `**** **** **** ${c.lastFourDigits}` : ""),
         expiry: c.expiryDate || c.expiry || "",
       }));
-
-      const backendAddress = json.address || json.home_address || null;
-
+      
+      // 🔧 normalize homeAddress (object OR string)
+      const rawAddr = json.homeAddress || json.address || json.home_address || null;
+      
+      let backendAddress: any = null;
+      
+      if (rawAddr) {
+        if (typeof rawAddr === "string") {
+          // try to parse "Street, City ZIP"
+          const [streetPart, cityZipPart] = rawAddr.split(",").map((p) => p.trim());
+          let city = "";
+          let zip = "";
+      
+          if (cityZipPart) {
+            const parts = cityZipPart.split(/\s+/);
+            if (parts.length >= 2) {
+              zip = parts.pop() || "";
+              city = parts.join(" ");
+            } else {
+              city = cityZipPart;
+            }
+          }
+      
+          backendAddress = {
+            street: streetPart || rawAddr,
+            city,
+            state: "",
+            zipCode: zip,
+            country: "",
+          };
+        } else {
+          backendAddress = rawAddr;
+        }
+      }
+      
       const acc: Account = {
         id: json.id || "",
         firstName: json.firstName || "",
         lastName: json.lastName || "",
         email: json.email || email,
-        password: password,
+        password,
         isLoggedIn: true,
         emailVerified: true,
         isActive: true,
         role: json.role || "",
         paymentCards: mappedCards,
-        isSubscribedToPromotions: false,
+        isSubscribedToPromotions: json.subscribeToPromotions ?? false,
+      
+        address: backendAddress
+          ? {
+              street: backendAddress.street ?? "",
+              city: backendAddress.city ?? "",
+              state: backendAddress.state ?? "",
+              postalCode:
+                backendAddress.postalCode ??
+                backendAddress.zipCode ??
+                "",
+              country: backendAddress.country ?? "",
+            }
+          : undefined,
       };
-
+      
       setAccount(acc);
       return true;
+      
     } catch (e) {
       // Log and re-throw so callers (pages/components) can present the error message to users.
       console.warn("login error", e);
@@ -224,7 +327,15 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         firstName: acc.firstName,
         lastName: acc.lastName,
         phone: undefined,
-        homeAddress: acc.address || undefined,
+        homeAddress: acc.address
+          ? {
+              street: acc.address.street,
+              city: acc.address.city,
+              state: acc.address.state,
+              zipCode: acc.address.postalCode,
+              country: acc.address.country,
+            }
+          : undefined,
         newPassword: undefined,
         subscribeToPromotions: acc.isSubscribedToPromotions,
       };
@@ -291,6 +402,9 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
       });
 
       const json = await res.json().catch(() => ({}));
+
+       
+
       if (!res.ok) {
         const msg = (json && (json.error || json.message)) || `Server returned ${res.status}`;
         return { success: false, message: msg };
@@ -318,8 +432,47 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  const deleteCard = async (cardId: string): Promise<{ success: boolean; message?: string }> => {
+    try {
+      if (!account || !account.id) {
+        return { success: false, message: "No user session found" };
+      }
+  
+      const res = await fetch(
+        `http://localhost:8080/api/users/${encodeURIComponent(account.id)}/payment-cards/${encodeURIComponent(cardId)}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "X-User-Id": account.id,
+          },
+        }
+      );
+  
+      const json = await res.json().catch(() => ({} as any));
+  
+      if (!res.ok) {
+        const msg = (json && (json.error || json.message)) || `Server returned ${res.status}`;
+        return { success: false, message: msg };
+      }
+  
+      // Update local account state
+      const currentCards = account.paymentCards || [];
+      const remaining = currentCards.filter((c) => c.id !== cardId);
+      setAccount({
+        ...(account as Account),
+        paymentCards: remaining,
+      });
+  
+      return { success: true, message: json.message || "Payment card removed" };
+    } catch (e: any) {
+      return { success: false, message: e?.message || "Failed to delete payment card" };
+    }
+  };
+  
+
   return (
-    <AccountContext.Provider value={{ account, updateAccountField, createAccount, login, logout, updateAccount, addCard }}>
+    <AccountContext.Provider value={{ account, updateAccountField, createAccount, login, logout, updateAccount, addCard, deleteCard }}>
       {children}
     </AccountContext.Provider>
   );
