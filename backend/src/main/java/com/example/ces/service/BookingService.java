@@ -9,12 +9,12 @@ import com.example.ces.repository.PromotionRepository;
 import com.example.ces.repository.TicketRepository;
 import com.example.ces.repository.UserRepository;
 import com.example.ces.repository.ShowtimeRepository;
+import com.example.ces.repository.MovieRepository; // ⭐ ADDED
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -29,34 +29,38 @@ public class BookingService {
     private final UserRepository userRepository;
     private final PaymentCardRepository paymentCardRepository;
     private final PromotionRepository promotionRepository;
+    private final EmailService emailService;
 
-    public BookingService(BookingRepository bookingRepository,
+    // ⭐ ADDED
+    private final MovieRepository movieRepository;
+
+    public BookingService(
+            BookingRepository bookingRepository,
             TicketRepository ticketRepository,
             ShowtimeRepository showtimeRepository,
             UserRepository userRepository,
             PaymentCardRepository paymentCardRepository,
-            PromotionRepository promotionRepository) {
+            PromotionRepository promotionRepository,
+            EmailService emailService,
+            MovieRepository movieRepository // ⭐ ADDED
+    ) {
         this.bookingRepository = bookingRepository;
         this.ticketRepository = ticketRepository;
         this.showtimeRepository = showtimeRepository;
         this.userRepository = userRepository;
         this.paymentCardRepository = paymentCardRepository;
         this.promotionRepository = promotionRepository;
+        this.emailService = emailService;
+        this.movieRepository = movieRepository; // ⭐ ADDED
     }
 
-    /**
-     * Create a booking with tickets, payment card, promotion, and update showtime's
-     * takenSeats
-     */
     public Booking createBooking(BookingRequestDTO request) {
         if (request == null)
             throw new IllegalArgumentException("BookingRequestDTO is required");
 
-        // find user
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + request.getUserId()));
 
-        // find showtime by Mongo _id first, fallback to business showtimeId
         Optional<Showtime> showtimeOpt = showtimeRepository.findById(request.getShowtimeId());
         if (showtimeOpt.isEmpty()) {
             showtimeOpt = showtimeRepository.findAll().stream()
@@ -66,7 +70,6 @@ public class BookingService {
         Showtime showtime = showtimeOpt
                 .orElseThrow(() -> new IllegalArgumentException("Showtime not found: " + request.getShowtimeId()));
 
-        // build seat and ticket lists from DTO
         List<BookingRequestDTO.TicketSelectionDTO> ticketSelections = request.getTickets();
         if (ticketSelections == null || ticketSelections.isEmpty()) {
             throw new IllegalArgumentException("At least one ticket selection is required");
@@ -89,10 +92,8 @@ public class BookingService {
             ticketPrices.add(basePrice * multiplier);
         }
 
-        // validate seats (uses MongoDB _id on showtime)
         validateSeatsAvailable(showtime.getId(), seatNumbers);
 
-        // create booking
         Booking booking = new Booking();
         booking.setBookingId(generateBookingId());
         booking.setUser(user);
@@ -101,7 +102,6 @@ public class BookingService {
         booking.setNumberOfTickets(seatNumbers.size());
         booking.setStatus(BookingStatus.Confirmed);
 
-        // Handle payment card if present in request
         if (request.getPaymentCard() != null) {
             PaymentCardDTO cardDTO = request.getPaymentCard();
             PaymentCard card = new PaymentCard();
@@ -115,17 +115,13 @@ public class BookingService {
             booking.setPaymentCard(savedCard);
         }
 
-        // Handle promotion if present in request
         if (request.getPromotionCode() != null && !request.getPromotionCode().isEmpty()) {
-            Optional<Promotion> promo = promotionRepository.findByPromotionCodeIgnoreCase(request.getPromotionCode());
-            if (promo.isPresent()) {
-                booking.setPromotion(promo.get());
-            }
+            promotionRepository.findByPromotionCodeIgnoreCase(request.getPromotionCode())
+                    .ifPresent(booking::setPromotion);
         }
 
         Booking savedBooking = bookingRepository.save(booking);
 
-        // create tickets
         List<Ticket> tickets = new ArrayList<>();
         for (int i = 0; i < seatNumbers.size(); i++) {
             Ticket ticket = new Ticket();
@@ -135,8 +131,6 @@ public class BookingService {
             ticket.setPrice(ticketPrices.get(i));
             ticket.setBookingId(savedBooking.getBookingId());
 
-            // derive an int showtimeId for Ticket.showtimeId field if possible
-            // (best-effort)
             try {
                 String numericPart = showtime.getShowtimeId() != null
                         ? showtime.getShowtimeId().replaceAll("[^0-9]", "")
@@ -156,23 +150,48 @@ public class BookingService {
         List<Ticket> savedTickets = ticketRepository.saveAll(tickets);
         savedBooking.setTickets(savedTickets);
 
-        // totals
         double total = savedTickets.stream().mapToDouble(Ticket::getPrice).sum();
 
-        // Apply promotion discount if present
         if (savedBooking.getPromotion() != null && savedBooking.getPromotion().getDiscountPercent() > 0) {
-            double discount = total * (savedBooking.getPromotion().getDiscountPercent() / 100.0);
-            total = total - discount;
+            total -= total * (savedBooking.getPromotion().getDiscountPercent() / 100.0);
         }
         savedBooking.setTotalPrice(total);
 
-        // update showtime taken seats using Mongo _id
         addSeatsToShowtimeTakenSeats(showtime.getId(), seatNumbers);
 
         Booking finalBooking = bookingRepository.save(savedBooking);
 
-        System.out.println(
-                "Created booking (DTO) id=" + finalBooking.getId() + " bookingId=" + finalBooking.getBookingId());
+        // ⭐ FIXED MOVIE TITLE LOOKUP (no getMovie())
+        String movieTitle = "Movie";
+        try {
+            if (showtime.getMovieId() != null) {
+                movieTitle = movieRepository.findById(showtime.getMovieId())
+                        .map(Movie::getTitle)
+                        .orElse("Movie");
+            }
+        } catch (Exception ex) {
+            System.err.println("Could not fetch movie title for showtime " + showtime.getId());
+        }
+
+        // ⭐ SEND EMAIL
+        try {
+            String userName = user.getName() != null ? user.getName() : user.getEmail();
+            String showtimeInfo = showtime.getDate() + " at " + showtime.getTime();
+            String seatsJoined = String.join(", ", seatNumbers);
+
+            emailService.sendBookingConfirmationEmail(
+                    user.getEmail(),
+                    userName,
+                    finalBooking.getBookingId(),
+                    movieTitle,
+                    showtimeInfo,
+                    seatsJoined,
+                    finalBooking.getTotalPrice());
+
+            System.out.println("✓ Sent booking confirmation email to " + user.getEmail());
+        } catch (Exception e) {
+            System.err.println("⚠ Failed to send booking confirmation email: " + e.getMessage());
+        }
 
         return finalBooking;
     }

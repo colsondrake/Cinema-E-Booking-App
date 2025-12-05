@@ -39,7 +39,6 @@ public class EmailService {
         String subject = "Welcome to CES Cinema - Please Verify Your Email";
         String confirmationUrl = "http://localhost:3000/verify-email?token=" + confirmationToken;
 
-
         Context context = new Context();
         context.setVariables(Map.of("userName", userName, "confirmationUrl", confirmationUrl));
         sendHtmlEmail(toEmail, subject, "email-templates/registration-confirmation", context);
@@ -63,9 +62,31 @@ public class EmailService {
         context.setVariables(Map.of(
                 "userName", userName,
                 "changeType", changeType,
-                "changeTime", new java.util.Date()
-        ));
+                "changeTime", new java.util.Date()));
         sendHtmlEmail(toEmail, subject, "email-templates/profile-changed", context);
+    }
+
+    /** Booking Confirmation Email */
+    public void sendBookingConfirmationEmail(
+            String toEmail,
+            String userName,
+            int bookingId,
+            String movieTitle,
+            String showtimeInfo,
+            String seats,
+            double totalPrice) {
+
+        String subject = "Your CES Booking Confirmation #" + bookingId;
+
+        Context context = new Context();
+        context.setVariables(Map.of(
+                "userName", userName,
+                "bookingId", bookingId,
+                "movieTitle", movieTitle,
+                "showtimeInfo", showtimeInfo,
+                "seats", seats));
+
+        sendHtmlEmail(toEmail, subject, "email-templates/booking-confirmation", context);
     }
 
     /** Core reusable HTML email sender */
@@ -78,10 +99,11 @@ public class EmailService {
             }
 
             // Check if mail credentials are configured
-            if (fromEmail == null || fromEmail.trim().isEmpty() || fromEmail.equals("no-reply@localhost") || 
-                mailPassword == null || mailPassword.trim().isEmpty()) {
+            if (fromEmail == null || fromEmail.trim().isEmpty() || fromEmail.equals("no-reply@localhost") ||
+                    mailPassword == null || mailPassword.trim().isEmpty()) {
                 System.err.println("Warning: SMTP credentials not configured. Skipping email to: " + toEmail);
-                System.err.println("To enable email verification, set SMTP_USERNAME and SMTP_PASSWORD environment variables.");
+                System.err.println(
+                        "To enable email verification, set SMTP_USERNAME and SMTP_PASSWORD environment variables.");
                 return;
             }
 
@@ -89,8 +111,10 @@ public class EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             // Fallback for missing/blank from address to avoid AddressException
-            String safeFrom = (fromEmail != null && !fromEmail.trim().isEmpty() && !fromEmail.equals("no-reply@localhost")) 
-                ? fromEmail.trim() : "no-reply@localhost";
+            String safeFrom = (fromEmail != null && !fromEmail.trim().isEmpty()
+                    && !fromEmail.equals("no-reply@localhost"))
+                            ? fromEmail.trim()
+                            : "no-reply@localhost";
             helper.setFrom(safeFrom);
             helper.setTo(toEmail);
             helper.setSubject(subject);
@@ -101,16 +125,20 @@ public class EmailService {
 
             System.out.println("Email sent successfully to: " + toEmail);
         } catch (MailAuthenticationException e) {
-            System.err.println("Failed to authenticate with email server. Please check SMTP credentials in environment variables (SMTP_USERNAME and SMTP_PASSWORD).");
-            System.err.println("Email not sent to: " + toEmail + ". In development, registration will proceed without email verification.");
+            System.err.println(
+                    "Failed to authenticate with email server. Please check SMTP credentials in environment variables (SMTP_USERNAME and SMTP_PASSWORD).");
+            System.err.println("Email not sent to: " + toEmail
+                    + ". In development, registration will proceed without email verification.");
             // Don't throw exception to allow registration to proceed
         } catch (MessagingException e) {
             System.err.println("Failed to send email to: " + toEmail + ". Reason: " + e.getMessage());
-            System.err.println("Email not sent to: " + toEmail + ". In development, registration will proceed without email verification.");
+            System.err.println("Email not sent to: " + toEmail
+                    + ". In development, registration will proceed without email verification.");
             // Don't throw exception to allow registration to proceed
         } catch (Exception e) {
             System.err.println("Unexpected error sending email to: " + toEmail + ". Reason: " + e.getMessage());
-            System.err.println("Email not sent to: " + toEmail + ". In development, registration will proceed without email verification.");
+            System.err.println("Email not sent to: " + toEmail
+                    + ". In development, registration will proceed without email verification.");
             // Don't throw exception to allow registration to proceed
         }
     }
