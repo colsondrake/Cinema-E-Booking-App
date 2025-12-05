@@ -60,6 +60,17 @@ const ConfirmBooking = () => {
     const [submitted, setSubmitted] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
+    // Promo code state
+    const [promoCodeInput, setPromoCodeInput] = useState("");
+    const [promoLoading, setPromoLoading] = useState(false);
+    const [promoError, setPromoError] = useState<string | null>(null);
+    const [appliedPromo, setAppliedPromo] = useState<{
+        promotionId: string;
+        promotionCode: string;
+        discountPercent: number;
+        startDate: string;
+        endDate: string;
+    } | null>(null);
 
     const validate = () => {
         const e: Record<string, string> = {};
@@ -93,6 +104,62 @@ const ConfirmBooking = () => {
         const formatted = parts.join(" ");
         const newCard = { ...(checkout?.card || {}), cardNumber: formatted, id: checkout?.card?.id ?? "" };
         updateCheckoutField("card", newCard as any);
+    }
+
+    // Apply promo code by calling backend
+    const handleApplyPromo = async () => {
+        const code = (promoCodeInput || "").trim();
+        if (!code) {
+            setPromoError("Enter a promo code.");
+            return;
+        }
+
+        try {
+            setPromoError(null);
+            setPromoLoading(true);
+
+            const API_BASE = "http://localhost:8080";
+            const res = await fetch(`${API_BASE}/api/promotions/${encodeURIComponent(code)}`);
+            if (!res.ok) {
+                // treat any non-2xx as invalid
+                let msg = "Invalid promo code.";
+                try {
+                    const body = await res.json();
+                    if (body?.message) msg = body.message;
+                } catch (_) {
+                    // ignore parse errors
+                }
+                setAppliedPromo(null);
+                setPromoError(msg);
+                return;
+            }
+
+            const promo = await res.json();
+
+            // Validate date range using YYYY-MM-DD comparison
+            const today = new Date().toISOString().slice(0, 10);
+            if (!promo.startDate || !promo.endDate) {
+                setPromoError("Promotion data missing dates.");
+                setAppliedPromo(null);
+                return;
+            }
+
+            if (today < promo.startDate || today > promo.endDate) {
+                setPromoError("This promotion is not valid today.");
+                setAppliedPromo(null);
+                return;
+            }
+
+            // Success: apply promo
+            setAppliedPromo(promo as any);
+            setPromoError(null);
+        } catch (e: any) {
+            console.error("apply promo failed", e);
+            setPromoError(e?.message || "Failed to apply promo.");
+            setAppliedPromo(null);
+        } finally {
+            setPromoLoading(false);
+        }
     }
 
     const handleSubmit = async (ev: React.FormEvent<HTMLFormElement>) => {
@@ -141,6 +208,10 @@ const ConfirmBooking = () => {
     const totalPrice = checkout?.tickets.reduce((sum, ticket) => {
         return sum + (TICKET_PRICES[ticket.ticketType] || 0);
     }, 0) || 0;
+
+    // Calculate discounted price if promo applied
+    const discountPercent = appliedPromo?.discountPercent ?? 0;
+    const discountedTotalPrice = discountPercent > 0 ? +(totalPrice * (1 - discountPercent / 100)).toFixed(2) : totalPrice;
 
     if (!checkout || !movie || !showtime) {
         return (
@@ -247,9 +318,28 @@ const ConfirmBooking = () => {
 
                         {/* Total Price Section */}
                         <div className="border-t border-gray-600 pt-4 mb-6">
-                            <div className="flex justify-between items-center text-xl font-bold">
-                                <span>Total Price:</span>
-                                <span className="text-blue-300">${totalPrice.toFixed(2)}</span>
+                            <div className="flex flex-col gap-2">
+                                <div className="flex justify-between items-center text-lg font-medium">
+                                    <span>Subtotal:</span>
+                                    <span className="text-gray-300">${totalPrice.toFixed(2)}</span>
+                                </div>
+                                {appliedPromo ? (
+                                    <>
+                                        <div className="flex justify-between items-center text-lg text-green-300">
+                                            <span>Promotion ({appliedPromo.promotionCode}):</span>
+                                            <span>-{appliedPromo.discountPercent}%</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xl font-bold pt-1">
+                                            <span>Total Price:</span>
+                                            <span className="text-blue-300">${discountedTotalPrice.toFixed(2)}</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="flex justify-between items-center text-xl font-bold">
+                                        <span>Total Price:</span>
+                                        <span className="text-blue-300">${totalPrice.toFixed(2)}</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -337,6 +427,32 @@ const ConfirmBooking = () => {
                                         aria-invalid={!!errors.cvv}
                                     />
                                     {errors.cvv && <p className="mt-1 text-sm text-red-400">{errors.cvv}</p>}
+                                </div>
+
+                                {/* Promo Code Input */}
+                                <div className="md:col-span-2">
+                                    <h3 className="text-lg font-semibold mb-3 text-gray-200">Promo Code</h3>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={promoCodeInput}
+                                            onChange={(e) => setPromoCodeInput(e.target.value)}
+                                            placeholder="Enter promo code"
+                                            className="flex-1 px-4 py-2 rounded-md bg-[#0b1727] border border-gray-700 text-white"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleApplyPromo}
+                                            disabled={promoLoading}
+                                            className="px-4 py-2 rounded-md bg-green-600 text-white font-semibold hover:bg-green-700 disabled:opacity-60"
+                                        >
+                                            {promoLoading ? "Applying..." : "Add Promo"}
+                                        </button>
+                                    </div>
+                                    {promoError && <p className="mt-2 text-sm text-red-400">{promoError}</p>}
+                                    {appliedPromo && !promoError && (
+                                        <p className="mt-2 text-sm text-green-300">Applied {appliedPromo.promotionCode} — {appliedPromo.discountPercent}% off</p>
+                                    )}
                                 </div>
 
                                 {/* Submit Button */}
