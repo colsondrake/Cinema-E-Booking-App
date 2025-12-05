@@ -28,6 +28,10 @@ public class UserService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private PaymentCardRepository paymentCardRepository; 
+
+    
     /**
      * Get user by ID
      */
@@ -188,10 +192,12 @@ public class UserService {
             card.setId(UUID.randomUUID().toString());
         }
 
-        user.addPaymentCard(card);
+        PaymentCard savedCard = paymentCardRepository.save(card);
+
+        user.addPaymentCard(savedCard);
         userRepository.save(user);
 
-        return card;
+        return savedCard;
     }
 
     /**
@@ -234,9 +240,7 @@ public class UserService {
         user.setEmailVerified(false);
         user.setIsSubscribedToPromotions(dto.isSubscribeToPromotions());
 
-        if (dto.getHomeAddress() != null) {
-            user.setHomeAddress(dto.getHomeAddress());
-        }
+        user.setHomeAddress(dto.getHomeAddress());
 
         return userRepository.save(user);
     }
@@ -249,5 +253,30 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         return user.isEmailVerified();
+    }
+
+    /**
+     * Remove a payment card from a user
+     */
+    public void deletePaymentCard(String userId, String cardId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (user.getPaymentCards() == null || user.getPaymentCards().isEmpty()) {
+            throw new IllegalArgumentException("No payment cards found for user");
+        }
+
+        boolean removed = user.getPaymentCards().removeIf(card -> card.getId().equals(cardId));
+        if (!removed) {
+            throw new IllegalArgumentException("Payment card not found for this user");
+        }
+
+        // Save the user without that card
+        userRepository.save(user);
+
+        // Also delete the card document itself
+        // (since you're using @DBRef with PaymentCardRepository)
+        // If you want to keep the card docs, you can comment this out.
+        paymentCardRepository.deleteById(cardId);
     }
 }
