@@ -8,27 +8,80 @@ import AccountNavbar from "@/components/AccountNavbar";
 const genId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,9)}`;
 
 const AccountPage = () => {
-  const router = useRouter();
-  const { account, updateAccountField, updateAccount, addCard, logout } = useAccount();
+    const router = useRouter();
+    const { account, updateAccountField, updateAccount, addCard, logout, deleteCard } = useAccount();
+  
+    const [cardHolder, setCardHolder] = useState("");
+    const [cardNumber, setCardNumber] = useState("");
+    const [expiry, setExpiry] = useState("");
+    const [cvv, setCvv] = useState("");
+    const [error, setError] = useState<string | null>(null);
+    const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  
+    const [street, setStreet] = useState("");
+    const [city, setCity] = useState("");
+    const [postalCode, setPostalCode] = useState("");
+    const [stateVal, setStateVal] = useState("");
+    const [country, setCountry] = useState("");
+  
+    // 🔑 keep local inputs in sync with account.address
+    React.useEffect(() => {
+      if (!account?.address) {
+        setStreet("");
+        setCity("");
+        setPostalCode("");
+        setStateVal("");
+        setCountry("");
+        return;
+      }
+  
+      setStreet(account.address.street ?? "");
+      setCity(account.address.city ?? "");
+      setPostalCode(account.address.postalCode ?? "");
+      setStateVal(account.address.state ?? "");
+      setCountry(account.address.country ?? "");
+    }, [account?.address]);
+  
+    if (!account) {
+      return (
+        <section className="py-14 md:py-24 bg-[#0b1727] text-white min-h-screen">
+          <div className="container px-4 mx-auto text-center">
+            <p className="mb-4">No account signed in.</p>
+          </div>
+        </section>
+      );
+    }
 
-  const [cardHolder, setCardHolder] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvv, setCvv] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  
 
-  if (!account) {
-    return (
-        <>
-            <section className="py-14 md:py-24 bg-[#0b1727] text-white min-h-screen">
-                <div className="container px-4 mx-auto text-center">
-                    <p className="mb-4">No account signed in.</p>
-                </div>
-            </section>
-        </>
-    );
-  }
+  // helper to push updated address into context
+  const syncAddressToAccount = (
+    next: Partial<{
+      street: string;
+      city: string;
+      state: string;
+      postalCode: string;
+      country: string;
+    }>
+  ) => {
+    const current = account.address || {
+      street: "",
+      city: "",
+      state: "",
+      postalCode: "",
+      country: "",
+    };
+
+    const updatedAddress = {
+      ...current,
+      ...next,
+    };
+
+    updateAccountField("address", updatedAddress);
+  };
+
+
+
 
     const handleSave = async () => {
         setError(null);
@@ -67,6 +120,15 @@ const AccountPage = () => {
         setExpiry("");
         setCvv("");
     };
+
+    const handleDeleteCard = async (cardId: string) => {
+        setError(null);
+        const result = await deleteCard(cardId);
+        if (!result.success) {
+          setError(result.message || "Failed to delete card");
+        }
+      };
+      
 
     // Formatting helpers for inputs
     const formatCardNumber = (value: string) => {
@@ -110,23 +172,63 @@ const AccountPage = () => {
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                 <h4 className="mb-2">Address</h4>
-                <input value={account?.address?.street} onChange={() => {}} placeholder="Street" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2" />
-                <input value={account?.address?.city} onChange={() => {}} placeholder="City" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2" />
-                <input value={account?.address?.postalCode} onChange={() => {}} placeholder="Postal code" className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white" />
+                <input
+                value={street}
+                onChange={(e) => {
+                    const v = e.target.value;
+                    setStreet(v);
+                    syncAddressToAccount({ street: v });
+                }}
+                placeholder="Street"
+                className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2"
+                />
+
+                <input
+                value={city}
+                onChange={(e) => {
+                    const v = e.target.value;
+                    setCity(v);
+                    syncAddressToAccount({ city: v });
+                }}
+                placeholder="City"
+                className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2"
+                />
+                
+                <input
+                value={postalCode}
+                onChange={(e) => {
+                    const v = e.target.value;
+                    setPostalCode(v);
+                    syncAddressToAccount({ postalCode: v });
+                }}
+                placeholder="Postal code"
+                className="w-full px-3 py-2 rounded bg-[#17233a] border border-gray-700 text-white mb-2"
+                />
                 </div>
             </div>
 
             <div className="mt-6">
                 <h4 className="mb-2">Payment Cards</h4>
                 <div className="grid gap-2">
-                {(account.paymentCards || []).map(card => (
-                    <div key={card.id} className="flex items-center justify-between bg-[#0b1727] p-3 rounded">
-                    <div>
+                {(account.paymentCards || []).map((card) => (
+                    <div
+                        key={card.id}
+                        className="flex items-center justify-between bg-[#0b1727] p-3 rounded"
+                    >
+                        <div>
                         <div className="font-medium">{card.cardholderName}</div>
-                        <div className="text-sm text-gray-300">{card.cardNumber} • {card.expiry}</div>
+                        <div className="text-sm text-gray-300">
+                            {card.cardNumber} • {card.expiry}
+                        </div>
+                        </div>
+                        <button
+                        onClick={() => handleDeleteCard(card.id)}
+                        className="px-3 py-1 bg-red-600 hover:bg-red-500 rounded text-sm cursor-pointer"
+                        >
+                        Delete
+                        </button>
                     </div>
-                    </div>
-                ))}
+                    ))}
                 </div>
 
                 {account.paymentCards != undefined && account.paymentCards.length < 4 && (
