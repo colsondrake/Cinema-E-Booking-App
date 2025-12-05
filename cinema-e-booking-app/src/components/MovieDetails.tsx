@@ -3,46 +3,15 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMovie } from "@/context/MovieContext";
-
-interface Showtime {
-  showtimeId: string;
-  movieId: string;
-  date: string; // e.g. 2025-10-28
-  basePrice: number;
-  time: string; // e.g. 19:30
-  seats: number;
-  remainingSeats: number;
-}
-
-interface Movie {
-  id: string;
-  title: string;
-  director: string;
-  year: number;
-  genres: string[];
-  rating: string;
-  description: string;
-  posterUrl: string;
-  trailerUrl?: string;
-  // Backend may return showtimes as strings or as objects; support both for safety
-  showtimes: Array<string | Showtime>;
-}
+import { useMovie, Showtime as ContextShowtime, Movie as ContextMovie } from "@/context/MovieContext";
 
 
 const MovieDetails = () => {
 
   const router = useRouter();
-  
   const { movie, setMovie, setShowtime } = useMovie();
   const [loading, setLoading] = useState(true);
-
-  // // Format a showtime object into a user-friendly label
-  // const formatShowtime = (st: Showtime) => {
-  //   // Robust formatting: join only defined parts, avoid rendering 'undefined' or blanks
-  //   const parts = [st.date, st.time].filter(Boolean);
-  //   return parts.join(" ");
-  // };
+  const [showtimes, setShowtimes] = useState<ContextShowtime[]>([]);
 
   useEffect(() => {
     /**
@@ -58,7 +27,24 @@ const MovieDetails = () => {
             const res = await fetch(`http://localhost:8080/api/movies/${movieId}`);
             if (res.ok) {
               const data = await res.json();
-              setMovie(data);
+              setMovie(data as ContextMovie);
+
+              // Fetch showtimes for this movie from the dedicated endpoint
+              try {
+                const stRes = await fetch(`http://localhost:8080/api/movies/${movieId}/showtimes`);
+                if (stRes.ok) {
+                  const stData = await stRes.json();
+                  // Normalize each showtime to ensure `showtimeId` exists (backend may return `id`)
+                  const normalized = Array.isArray(stData)
+                    ? stData.map((s: any) => ({ ...(s || {}), showtimeId: s?.showtimeId ?? s?.id ?? s?._id ?? null }))
+                    : [];
+                  setShowtimes(normalized as ContextShowtime[]);
+                } else {
+                  setShowtimes([]);
+                }
+              } catch (err) {
+                setShowtimes([]);
+              }
             } else {
               setMovie(null);
             }
@@ -73,6 +59,17 @@ const MovieDetails = () => {
     };
     fetchMovie();
   }, []);
+
+  // Type guard to narrow `showtime` values to `ContextShowtime` objects
+  const isShowtime = (x: any): x is ContextShowtime => typeof x === "object" && x !== null && "showtimeId" in x;
+
+  // When the user selects a showtime from the local `showtimes` array, set it in context and navigate.
+  const handleSelectShowtime = (showtime: ContextShowtime) => {
+    if (!movie) return;
+    setMovie(movie);
+    setShowtime(showtime);
+    router.push("/booking/ticket-selection");
+  };
 
 
   // Show loading state while fetching movie data
@@ -137,24 +134,16 @@ const MovieDetails = () => {
             <div className="mb-2 text-center">
               <span className="font-semibold">Showtimes: </span>
               <div className="flex flex-wrap gap-4 justify-center mt-3">
-                {movie.showtimes.map((showtime, idx) => {
-                  const isObj = typeof showtime === "object" && showtime !== null;
-                  const showtimeObj = isObj ? (showtime as Showtime) : null;
-                  // Generate a stable, unique key even if showtimeId is missing or showtime is a string
-                  const key = showtimeObj?.showtimeId
-                    || (showtimeObj ? `${showtimeObj.date || 'unknown'}-${showtimeObj.time || 'unknown'}-${idx}`
-                    : `raw-${idx}-${String(showtime)}`);
-                  const timeLabel = showtimeObj?.time || (typeof showtime === 'string' ? showtime : 'N/A');
+                {showtimes.map((st, idx) => {
+                  const key = st?.showtimeId ?? `${st?.date ?? 'unknown'}-${st?.time ?? 'unknown'}-${idx}`;
+                  const timeLabel = st?.time ?? 'N/A';
                   return (
                     <button
                       key={key}
                       className="px-6 py-3 rounded-lg bg-blue-500 text-white text-lg font-semibold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer transition-all duration-150"
                       onClick={() => {
-                        if (typeof window !== "undefined" && showtimeObj) {
-                          setMovie(movie);
-                          setShowtime(showtimeObj);
-                        }
-                        router.push("/booking/ticket-selection");
+                        console.log(showtimes);
+                        handleSelectShowtime(st);
                       }}
                     >
                       {timeLabel}

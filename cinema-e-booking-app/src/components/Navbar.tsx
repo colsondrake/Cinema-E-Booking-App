@@ -10,9 +10,6 @@ const AuthNavMenu = () => {
 	const router = useRouter();
 	const { account, logout } = useAccount();
 
-	// Debug: log account so we can verify client state in the navbar
-	console.log("Navbar account:", account);
-
 	if (account?.role == "USER" || account?.role == null) {
 		return (
 			<div className="flex items-center space-x-2">

@@ -48,9 +48,9 @@ const ConfirmBooking = () => {
         }
 
         // Set showtimeId only when it's not already set to avoid loops
-        if (showtime?.id) {
-            if (checkout?.showtimeId !== showtime.id) {
-                updateCheckoutField("showtimeId", showtime.id);
+        if (showtime?.showtimeId) {
+            if (checkout?.showtimeId !== showtime.showtimeId) {
+                updateCheckoutField("showtimeId", showtime.showtimeId);
             }
         }
     }, [account, showtime, checkout?.showtimeId, checkout?.name, checkout?.email, checkout?.card, updateCheckoutField])

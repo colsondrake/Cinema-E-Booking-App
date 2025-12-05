@@ -3,18 +3,16 @@
 import React, { createContext, useContext, useState } from "react";
 
 export type Showtime = {
+  showtimeId: any;
+  movieId: any;
+  date: any;
   availableSeats: any;
   basePrice: any;
-  date: any;
-  id: any;
-  movieId: any;
-  remainingSeats: any;
-  seats: any;
   seatsBooked: any;
-  showroomId: any;
-  showtimeId: any;
-  takenSeats: any;
   time: any;
+  showroomId: any;
+  seats: any;
+  takenSeats: any;
 }
 
 // Movie type definition for type safety and clarity
