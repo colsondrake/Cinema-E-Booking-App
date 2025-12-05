@@ -1,7 +1,8 @@
 'use client'
 
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
+import SeatProxy from './SeatProxy';
 import { useCheckout } from '@/context/CheckoutContext';
 import { useAccount } from "@/context/AccountContext";
 import type { Seat } from '@/context/CheckoutContext';
@@ -23,12 +24,18 @@ const SeatSelection = () => {
 
     // Dynamically fetched taken seats for this showtime (stored as string labels, e.g. "A1").
     const [takenSeatSet, setTakenSeatSet] = useState<string[]>([]);
+    // Whether the taken seats have finished loading (including enforced minimum delay)
+    const [isTakenReady, setIsTakenReady] = useState(false);
+    const minDelayMs = 1500;
+    const delayTimerRef = useRef<number | null>(null);
 
     // Fast lookup for taken seat labels
     const takenSeatIds = useMemo(() => new Set(takenSeatSet), [takenSeatSet]);
 
     useEffect(() => {
         const fetchTakenSeats = async () => {
+            // ensure proxies show while fetching
+            setIsTakenReady(false);
             try {
                 // Try a list of candidate ids so we match the backend's expected id format.
                 const candidates = [
@@ -44,6 +51,7 @@ const SeatSelection = () => {
                 const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
                 let found = false;
+                const start = Date.now();
                 for (const candidate of candidates) {
                     const url = `${apiBase}/api/showtimes/${candidate}/seats`;
                     try {
@@ -82,11 +90,36 @@ const SeatSelection = () => {
                     // eslint-disable-next-line no-console
                     console.debug('[SeatSelection] falling back to context takenSeats', fallback);
                 }
+
+                // Ensure proxies are shown at least minDelayMs
+                const elapsed = Date.now() - start;
+                const remaining = Math.max(0, minDelayMs - elapsed);
+                if (remaining === 0) {
+                    setIsTakenReady(true);
+                } else {
+                    // schedule setting ready after remaining ms
+                    // use window.setTimeout to get a number return type
+                    delayTimerRef.current = window.setTimeout(() => {
+                        setIsTakenReady(true);
+                        delayTimerRef.current = null;
+                    }, remaining) as unknown as number;
+                }
             } catch (e) {
                 setTakenSeatSet([]);
+                // still enforce min delay
+                delayTimerRef.current = window.setTimeout(() => {
+                    setIsTakenReady(true);
+                    delayTimerRef.current = null;
+                }, minDelayMs) as unknown as number;
             }
         };
         fetchTakenSeats();
+        return () => {
+            if (delayTimerRef.current) {
+                clearTimeout(delayTimerRef.current as unknown as number);
+                delayTimerRef.current = null;
+            }
+        };
     }, [checkout?.showtimeId, showtime?.showtimeId, showtime?.takenSeats]);
 
     // Helper to build a full Seat object from a label (e.g. "A1" or "3-4").
@@ -161,6 +194,8 @@ const SeatSelection = () => {
         );
     };
 
+    // SeatProxy component is imported from ./SeatProxy
+
     const handleSubmit = () => {
         setError(null);
         if (checkout?.seats.length != checkout?.tickets.length) {
@@ -200,13 +235,13 @@ const SeatSelection = () => {
                     const right = Array.from({ length: 5 }, (_, i) => `${rowLetter}${i + 6}`);
                     return (
                         <div key={rowIndex} className="flex flex-row items-center gap-4 justify-center">
-                            <div className="flex flex-row gap-2">{left.map(l => renderSeat(l))}</div>
+                            <div className="flex flex-row gap-2">{left.map(l => isTakenReady ? renderSeat(l) : <SeatProxy key={l} />)}</div>
                             <div className="w-8 h-10 flex items-center justify-center">
                                 {rowIndex === 0 && (
                                     <span className="text-[10px] text-gray-500 rotate-90 select-none">WALKWAY</span>
                                 )}
                             </div>
-                            <div className="flex flex-row gap-2">{right.map(l => renderSeat(l))}</div>
+                            <div className="flex flex-row gap-2">{right.map(l => isTakenReady ? renderSeat(l) : <SeatProxy key={l} />)}</div>
                         </div>
                     );
                 })}
