@@ -1,4 +1,5 @@
-'use client'
+"use client"
+import Link from 'next/link'
 
 const NotFound = () => {
   return (
@@ -8,12 +9,12 @@ const NotFound = () => {
         <p className="mb-8 text-lg text-gray-500 dark:text-gray-300 text-center max-w-xl">
           Thank you for your booking! 
         </p>
-        <a
-          href="/"
+        <Link
+          href="/account"
           className="px-6 py-3 bg-gray-200 dark:bg-[#17233a] text-[#373572] dark:text-white rounded-md border border-gray-300 dark:border-gray-700 hover:bg-blue-600 hover:text-white transition-colors duration-200 cursor-pointer font-semibold"
         >
-          Back to Home
-        </a>
+          Go to Account
+        </Link>
       </div>
     </section>
   );
