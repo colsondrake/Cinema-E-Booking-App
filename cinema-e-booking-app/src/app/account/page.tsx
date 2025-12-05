@@ -7,10 +7,16 @@ import AccountNavbar from "@/components/AccountNavbar";
 
 const genId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,9)}`;
 
+const API_BASE = "http://localhost:8080";
+
 const AccountPage = () => {
     const router = useRouter();
     const { account, updateAccountField, updateAccount, addCard, logout, deleteCard } = useAccount();
   
+  const [bookings, setBookings] = React.useState<any[]>([]);
+  const [loadingBookings, setLoadingBookings] = React.useState(false);
+  const [bookingsError, setBookingsError] = React.useState<string | null>(null);
+  const [enrichedBookings, setEnrichedBookings] = React.useState<any[]>([]);
     const [cardHolder, setCardHolder] = useState("");
     const [cardNumber, setCardNumber] = useState("");
     const [expiry, setExpiry] = useState("");
@@ -143,6 +149,84 @@ const AccountPage = () => {
         return `${digits.slice(0,2)}/${digits.slice(2)}`;
     };
 
+  // Fetch booking (order) history for the signed-in user
+  React.useEffect(() => {
+    if (!account) return;
+    const userId = (account as any).id || (account as any).userId || account.email;
+    if (!userId) return;
+
+    const controller = new AbortController();
+    setLoadingBookings(true);
+    setBookingsError(null);
+
+    fetch(`${API_BASE}/api/bookings/user/${encodeURIComponent(userId)}`, { signal: controller.signal })
+      .then(async (res) => {
+        if (!res.ok) {
+          const txt = await res.text().catch(() => 'Failed to load');
+          throw new Error(txt || 'Failed to load bookings');
+        }
+        return res.json();
+      })
+      .then((data) => {
+        // Expect an array; if backend returns object, try to normalize
+        if (Array.isArray(data)) setBookings(data);
+        else if (data && Array.isArray(data.bookings)) setBookings(data.bookings);
+        else setBookings([]);
+      })
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
+        setBookingsError(err.message || 'Failed to load bookings');
+      })
+      .finally(() => setLoadingBookings(false));
+
+    return () => controller.abort();
+  }, [account]);
+
+  // Enrich bookings with showtime and movie details
+  React.useEffect(() => {
+    if (!bookings || bookings.length === 0) {
+      setEnrichedBookings([]);
+      return;
+    }
+
+    let mounted = true;
+
+    const enrich = async () => {
+      const results = await Promise.all(bookings.map(async (b) => {
+        const out: any = { ...b };
+        try {
+          // Determine showtime id - try several possible shapes
+          const showtimeId = b.showtime?.id || b.showtime?.showtimeId || b.showtimeId || b.showtime;
+          if (showtimeId) {
+            const sres = await fetch(`${API_BASE}/api/showtimes/${encodeURIComponent(showtimeId)}`);
+            if (sres.ok) {
+              out.showtime = await sres.json();
+            }
+          }
+
+          const movieId = out.showtime?.movieId || b.movieId || b.movie?.id;
+          if (movieId) {
+            const mres = await fetch(`${API_BASE}/api/movies/${encodeURIComponent(movieId)}`);
+            if (mres.ok) {
+              out.movie = await mres.json();
+            }
+          }
+        } catch (e) {
+          // ignore enrichment errors per-item
+        }
+        return out;
+      }));
+
+      if (mounted) setEnrichedBookings(results);
+    };
+
+    enrich();
+
+    return () => { mounted = false; };
+  }, [bookings]);
+
+  // Choose enriched bookings when available
+  const displayBookings = enrichedBookings.length ? enrichedBookings : bookings;
 
   return (
     <>
@@ -253,6 +337,63 @@ const AccountPage = () => {
                 <input type="checkbox" checked={account.isSubscribedToPromotions} onChange={(e) => updateAccountField("isSubscribedToPromotions", e.target.checked)} />
                 <span className="cursor-pointer">Subscribe to promotions (optional)</span>
             </label>
+            </div>
+
+            <div className="mt-6">
+              <h4 className="mb-2">Order History</h4>
+
+              {loadingBookings ? (
+                <div className="text-gray-300">Loading order history...</div>
+              ) : bookingsError ? (
+                <div className="text-red-400">{bookingsError}</div>
+              ) : bookings.length === 0 ? (
+                <div className="text-gray-300">No orders found.</div>
+              ) : (
+                <div className="max-h-64 overflow-y-auto bg-[#0a1420] p-3 rounded border border-[#17233a]">
+                  <div className="grid gap-2">
+                  {displayBookings.map((b, idx) => (
+                    <div key={b.id || idx} className="bg-[#0b1727] p-3 rounded">
+                      <div className="flex justify-between items-center">
+                        <div className="font-medium text-sm">
+                          {b.bookingDate ? new Date(b.bookingDate).toLocaleString() : (b.createdAt || b.created || b.timestamp ? new Date(b.createdAt || b.created || b.timestamp).toLocaleString() : 'Date unknown')}
+                        </div>
+                        <div className="text-sm text-gray-300">#{String(b.id || '').slice(0,8)}</div>
+                      </div>
+
+                      {/* Movie & showtime info (if available) */}
+                      {(b.movie || b.showtime) && (
+                        <div className="mt-2 text-sm text-gray-300">
+                          {b.movie && b.movie.title && (
+                            <div className="font-medium">{b.movie.title}</div>
+                          )}
+                          {b.showtime && (
+                            <div className="text-gray-400">
+                              {b.showtime.date ? new Date(b.showtime.date).toLocaleDateString() : ''}
+                              {b.showtime.time ? ` • ${b.showtime.time}` : ''}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {b.tickets && Array.isArray(b.tickets) && (
+                        <div className="text-sm text-gray-300 mt-2">
+                          {b.tickets.map((t: any, i: number) => (
+                            <div key={t.seatNumber || i} className="flex justify-between">
+                              <div>{t.seatNumber || t.seat || 'Seat'}</div>
+                              <div className="text-gray-400">{t.ticketType || t.type || ''}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {typeof b.total !== 'undefined' && (
+                        <div className="mt-2 font-medium">Total: ${b.total}</div>
+                      )}
+                    </div>
+                  ))}
+                  </div>
+                </div>
+              )}
             </div>
 
 

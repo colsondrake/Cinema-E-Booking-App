@@ -1,22 +1,47 @@
 'use client'
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCheckout } from "@/context/CheckoutContext";
 import { useMovie } from "@/context/MovieContext";
 
 const TICKET_TYPES = [
     { label: "Adult", value: "adult", price: 12 },
-    { label: "Child", value: "child", price: 8 },
+    { label: "Child", value: "child", price: 6 },
     { label: "Senior", value: "senior", price: 9 },
 ];
 
 const Booking = () => {
     const router = useRouter();
     const { checkout, updateCheckoutField } = useCheckout();
-    const { movie, showtime } = useMovie();
+    const { movie, showtime, setShowtime } = useMovie();
 
     const [error, setError] = useState<string | null>(null);
+    
+    useEffect(() => {
+        // Try to load the selected showtime from sessionStorage and fetch details from the backend
+        const loadShowtime = async () => {
+            try {
+                if (showtime) return; // already loaded
+
+                const showtimeId = sessionStorage.getItem("selectedShowtimeId");
+                if (!showtimeId) return;
+
+                const apiBase = process.env.NEXT_PUBLIC_API_URL || "/api";
+                const res = await fetch(`${apiBase}/showtimes/${showtimeId}`);
+                if (!res.ok) {
+                    throw new Error(`Failed to fetch showtime: ${res.status}`);
+                }
+                const data = await res.json();
+                setShowtime?.(data);
+            } catch (err) {
+                console.error("Error loading showtime:", err);
+                setError("Failed to load showtime details.");
+            }
+        };
+
+        loadShowtime();
+    }, []);
     
     // Derive ticket counts from checkout.tickets
     const getTicketCount = (ticketType: string) => {
@@ -119,6 +144,12 @@ const Booking = () => {
                                 </div>
                                 {/* Total and submit button section */}
                                 <div className="flex flex-row justify-center items-center gap-4 border-t border-gray-700 pt-4">
+                                    <button
+                                        className="px-8 py-3 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors duration-200 cursor-pointer"
+                                        onClick={() => router.push(`/movie-details/${sessionStorage.getItem("selectedMovieId")}`)}
+                                    >
+                                        Back to Movie Details
+                                    </button>
                                     <button
                                         className="px-8 py-3 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors duration-200 cursor-pointer"
                                         onClick={handleSubmit}

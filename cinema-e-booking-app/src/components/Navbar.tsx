@@ -10,9 +10,6 @@ const AuthNavMenu = () => {
 	const router = useRouter();
 	const { account, logout } = useAccount();
 
-	// Debug: log account so we can verify client state in the navbar
-	console.log("Navbar account:", account);
-
 	if (account?.role == "USER" || account?.role == null) {
 		return (
 			<div className="flex items-center space-x-2">
@@ -107,6 +104,16 @@ const Navbar = () => {
 					CINEMAGIC
 				</Link>
 				<AuthNavMenu />
+				<button 
+					className="border border-blue-600 bg-blue-600 text-white hover:bg-blue-500 py-1.5 px-4 rounded ml-2 cursor-pointer"
+					onClick={() => {
+						console.log("ACCOUNT: ", account);
+						console.log("CHECKOUT: ", checkout);
+						console.log("MOVIE: ", movie);
+						console.log("SHOWTIME: ", showtime);
+					}}>
+						Console Log
+				</button>
 			</div>
 		</div>
 	);

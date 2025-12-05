@@ -31,8 +31,8 @@ export default function VerifyEmailPage() {
         if (!res.ok) throw new Error(j.error || "Verification failed");
 
         setStatus("success");
-        setMessage("Email verified! Redirecting to login…");
-        setTimeout(() => router.push("/login"), 1500);
+        setMessage("Email verified! Redirecting...");
+        setTimeout(() => router.push("/booking/checkout"), 1500);
       } catch (e: any) {
         setStatus("error");
         setMessage(e?.message || "Verification failed");

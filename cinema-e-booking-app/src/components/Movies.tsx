@@ -38,6 +38,7 @@ const Movies = () => {
     setCheckout({
       name: null,
       email: null,
+      card: null,
       showtimeId: null,
       userId: null,
       tickets: [],

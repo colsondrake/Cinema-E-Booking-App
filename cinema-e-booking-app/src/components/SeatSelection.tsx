@@ -1,121 +1,178 @@
 'use client'
 
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
+import SeatProxy from './SeatProxy';
 import { useCheckout } from '@/context/CheckoutContext';
+import { useAccount } from "@/context/AccountContext";
 import type { Seat } from '@/context/CheckoutContext';
 import { useMovie } from '@/context/MovieContext';
 
 const SeatSelection = () => {
     const router = useRouter();
     const { checkout, updateCheckoutField } = useCheckout();
+    const { account } = useAccount();
     const { showtime } = useMovie();
 
-    // Currently selected seat ids (derived from checkout).
-    const selectedSeatIds = checkout?.seats ? checkout.seats.map(s => s.seatId) : [];
+    // Currently selected seat labels (derived from checkout). Use backend labels like "A1".
+    const selectedSeatIds = checkout?.seats ? checkout.seats.map(s => s.seatNumber) : [];
     // Error message
     const [error, setError] = useState<string | null>(null)
-    // All seat ids 1..100.
-    const seatNumbers = useMemo(() => Array.from({ length: 100 }, (_, i) => i + 1), []);
+    // (Seat labels are generated per-row below.)
 
     // METHODS ----------------------
 
-    // Dynamically fetched taken seats for this showtime (stored as Seat[]).
-    const [takenSeatSet, setTakenSeatSet] = useState<Seat[]>([]);
+    // Dynamically fetched taken seats for this showtime (stored as string labels, e.g. "A1").
+    const [takenSeatSet, setTakenSeatSet] = useState<string[]>([]);
+    // Whether the taken seats have finished loading (including enforced minimum delay)
+    const [isTakenReady, setIsTakenReady] = useState(false);
+    const minDelayMs = 1500;
+    const delayTimerRef = useRef<number | null>(null);
 
-    // Fast lookup for taken seat ids
-    const takenSeatIds = useMemo(() => new Set(takenSeatSet.map(s => s.seatId)), [takenSeatSet]);
-
-    // Helper: parse backend seat label to Seat
-    const parseSeatLabel = useCallback((label: string): Seat | null => {
-        // Supported formats: "row-position" (e.g., "3-4") or letter+number (e.g., "A1")
-        let row: number | null = null;
-        let pos: number | null = null;
-
-        // Try numeric format row-position
-        if (/^\d+[-_]\d+$/.test(label)) {
-            const [r, p] = label.split(/[-_]/);
-            row = parseInt(r, 10);
-            pos = parseInt(p, 10);
-        } else if (/^[A-Za-z]\d+$/.test(label)) {
-            const letter = label[0].toUpperCase();
-            const map = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            row = map.indexOf(letter) + 1; // A=1, B=2, ...
-            pos = parseInt(label.slice(1), 10);
-        }
-
-        if (!row || !pos) return null;
-        if (row < 1 || row > 10 || pos < 1 || pos > 10) return null;
-
-        const seatId = (row - 1) * 10 + pos;
-        return {
-            seatId,
-            row,
-            seatNumber: `${row}-${pos}`,
-            isBooked: true,
-        };
-    }, []);
+    // Fast lookup for taken seat labels
+    const takenSeatIds = useMemo(() => new Set(takenSeatSet), [takenSeatSet]);
 
     useEffect(() => {
         const fetchTakenSeats = async () => {
+            // ensure proxies show while fetching
+            setIsTakenReady(false);
             try {
-                // Determine showtime id from checkout or movie context
-                const showtimeId = (checkout?.showtimeId ?? showtime?.showtimeId) ?? null;
-                if (!showtimeId) {
-                    setTakenSeatSet([]);
-                    return;
-                }
+                // Try a list of candidate ids so we match the backend's expected id format.
+                const candidates = [
+                    checkout?.showtimeId,
+                    showtime?.showtimeId,
+                    // some APIs may expose `id` or `_id` fields
+                    (showtime as any)?.id,
+                    (showtime as any)?._id,
+                    // older code may store selected showtime in sessionStorage
+                    typeof window !== 'undefined' ? sessionStorage.getItem('selectedShowtimeId') : null,
+                ].filter(Boolean).map(String);
 
                 const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
-                const url = `${apiBase}/api/showtimes/${String(showtimeId)}/seats`;
 
-                const res = await fetch(url, { method: 'GET', cache: 'no-store' });
-                if (!res.ok) {
-                    setTakenSeatSet([]);
-                    return;
+                let found = false;
+                const start = Date.now();
+                for (const candidate of candidates) {
+                    const url = `${apiBase}/api/showtimes/${candidate}/seats`;
+                    try {
+                        // Log the candidate we are trying
+                        // eslint-disable-next-line no-console
+                        console.debug('[SeatSelection] trying showtimeId ->', candidate, url);
+
+                        const res = await fetch(url, { method: 'GET', cache: 'no-store' });
+                        if (!res.ok) {
+                            // eslint-disable-next-line no-console
+                            console.debug('[SeatSelection] fetch failed', candidate, res.status, await res.text().catch(() => ''));
+                            continue;
+                        }
+                        const data: unknown = await res.json();
+                        const labels = Array.isArray(data) ? data.filter(l => typeof l === 'string').map(String) : [];
+                        if (labels.length > 0) {
+                            setTakenSeatSet(labels);
+                            found = true;
+                            break;
+                        } else {
+                            // API returned empty array for this id — keep trying other candidates
+                            // eslint-disable-next-line no-console
+                            console.debug('[SeatSelection] api returned empty array for', candidate);
+                            continue;
+                        }
+                    } catch (err) {
+                        // eslint-disable-next-line no-console
+                        console.debug('[SeatSelection] fetch error for', candidate, err);
+                    }
                 }
-                const data: unknown = await res.json();
-                // Expecting string[] of labels from backend
-                const labels = Array.isArray(data) ? data : [];
-                const seats: Seat[] = labels
-                    .map((lbl) => (typeof lbl === 'string' ? parseSeatLabel(lbl) : null))
-                    .filter((s): s is Seat => !!s);
 
-                setTakenSeatSet(seats);
+                if (!found) {
+                    // Fallback to using showtime.takenSeats from context (if preloaded)
+                    const fallback = Array.isArray((showtime as any)?.takenSeats) ? (showtime as any).takenSeats.map(String) : [];
+                    setTakenSeatSet(fallback);
+                    // eslint-disable-next-line no-console
+                    console.debug('[SeatSelection] falling back to context takenSeats', fallback);
+                }
+
+                // Ensure proxies are shown at least minDelayMs
+                const elapsed = Date.now() - start;
+                const remaining = Math.max(0, minDelayMs - elapsed);
+                if (remaining === 0) {
+                    setIsTakenReady(true);
+                } else {
+                    // schedule setting ready after remaining ms
+                    // use window.setTimeout to get a number return type
+                    delayTimerRef.current = window.setTimeout(() => {
+                        setIsTakenReady(true);
+                        delayTimerRef.current = null;
+                    }, remaining) as unknown as number;
+                }
             } catch (e) {
                 setTakenSeatSet([]);
+                // still enforce min delay
+                delayTimerRef.current = window.setTimeout(() => {
+                    setIsTakenReady(true);
+                    delayTimerRef.current = null;
+                }, minDelayMs) as unknown as number;
             }
         };
         fetchTakenSeats();
-    }, [checkout?.showtimeId, showtime?.showtimeId, parseSeatLabel]);
+        return () => {
+            if (delayTimerRef.current) {
+                clearTimeout(delayTimerRef.current as unknown as number);
+                delayTimerRef.current = null;
+            }
+        };
+    }, [checkout?.showtimeId, showtime?.showtimeId, showtime?.takenSeats]);
 
-    // Helper to build a full Seat object from an id.
-    const buildSeat = useCallback((id: number): Seat => {
-        const row = Math.floor((id - 1) / 10) + 1; // rows 1..10
-        const positionInRow = ((id - 1) % 10) + 1; // position 1..10
+    // Helper to build a full Seat object from a label (e.g. "A1" or "3-4").
+    const buildSeat = useCallback((label: string): Seat => {
+        // Default values
+        let rowNum = 0;
+        let seatNum = '';
+
+        if (/^\d+[-_]\d+$/.test(label)) {
+            const [r, p] = label.split(/[-_]/);
+            rowNum = parseInt(r, 10);
+            seatNum = `${r}-${p}`;
+        } else if (/^[A-Za-z]\d+$/.test(label)) {
+            const letter = label[0].toUpperCase();
+            const map = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            rowNum = map.indexOf(letter) + 1;
+            seatNum = label;
+        } else {
+            // fallback: put label into seatNumber and leave row 0
+            seatNum = label;
+        }
+
+        // Compute a numeric seatId for internal use (1..100) when possible
+        let seatId = 0;
+        if (rowNum > 0) {
+            const posMatch = label.match(/\d+$/);
+            const pos = posMatch ? parseInt(posMatch[0], 10) : 0;
+            seatId = (rowNum - 1) * 10 + pos;
+        }
+
         return {
-            seatId: id,
-            row,
-            seatNumber: `${row}-${positionInRow}`,
+            seatId,
+            row: rowNum,
+            seatNumber: seatNum,
             isBooked: false,
         };
     }, []);
 
-    // Toggle seat selection if not taken.
-    const toggleSeat = useCallback((seatId: number) => {
-        if (!checkout || takenSeatIds.has(seatId)) return;
-        const isSelected = selectedSeatIds.includes(seatId);
+    // Toggle seat selection if not taken. Uses backend label (e.g. "A1").
+    const toggleSeat = useCallback((seatLabel: string) => {
+        if (!checkout || takenSeatIds.has(seatLabel)) return;
+        const isSelected = selectedSeatIds.includes(seatLabel);
         const seats = isSelected
-            ? checkout.seats.filter(s => s.seatId !== seatId)
-            : [...checkout.seats, buildSeat(seatId)];
+            ? checkout.seats.filter(s => s.seatNumber !== seatLabel)
+            : [...checkout.seats, buildSeat(seatLabel)];
 
         updateCheckoutField('seats', seats);
     }, [checkout, selectedSeatIds, updateCheckoutField, takenSeatIds, buildSeat]);
 
     // Helper to build seat button.
-    const renderSeat = (num: number) => {
-        const isSelected = selectedSeatIds.includes(num);
-        const isTaken = takenSeatIds.has(num);
+    const renderSeat = (label: string, displayLabel?: string) => {
+        const isSelected = selectedSeatIds.includes(label);
+        const isTaken = takenSeatIds.has(label);
         const base = 'h-10 w-10 flex items-center justify-center text-xs font-medium rounded-md border transition-colors duration-150';
         const state = isTaken
             ? 'bg-red-700 text-white border-red-800 cursor-not-allowed opacity-70'
@@ -124,18 +181,20 @@ const SeatSelection = () => {
                 : 'bg-[#0b1727] text-white border-gray-700 hover:bg-blue-600 hover:text-white cursor-pointer';
         return (
             <button
-                key={num}
+                key={label}
                 type="button"
                 disabled={isTaken}
-                onClick={() => toggleSeat(num)}
+                onClick={() => toggleSeat(label)}
                 className={`${base} ${state}`}
                 aria-pressed={isSelected}
-                aria-label={`Seat ${num}${isTaken ? ' (Taken)' : ''}`}
+                aria-label={`Seat ${label}${isTaken ? ' (Taken)' : ''}`}
             >
-                {num}
+                {displayLabel ?? label}
             </button>
         );
     };
+
+    // SeatProxy component is imported from ./SeatProxy
 
     const handleSubmit = () => {
         setError(null);
@@ -143,7 +202,8 @@ const SeatSelection = () => {
             setError("Number of seats selected must match number of tickets.");
             return
         }
-        router.push("/booking/confirm")
+        if (account) router.push("/booking/checkout");
+        else router.push("/booking/sign-in")
     }
 
     return (
@@ -169,19 +229,19 @@ const SeatSelection = () => {
 
             {/* Seat Grid with walkway */}
             <div className="flex flex-col gap-2 mx-auto">
-                {Array.from({ length: 10 }, (_, row) => {
-                    const start = row * 10;
-                    const left = seatNumbers.slice(start, start + 5);
-                    const right = seatNumbers.slice(start + 5, start + 10);
+                {Array.from({ length: 10 }, (_, rowIndex) => {
+                    const rowLetter = String.fromCharCode('A'.charCodeAt(0) + rowIndex);
+                    const left = Array.from({ length: 5 }, (_, i) => `${rowLetter}${i + 1}`);
+                    const right = Array.from({ length: 5 }, (_, i) => `${rowLetter}${i + 6}`);
                     return (
-                        <div key={row} className="flex flex-row items-center gap-4 justify-center">
-                            <div className="flex flex-row gap-2">{left.map(renderSeat)}</div>
+                        <div key={rowIndex} className="flex flex-row items-center gap-4 justify-center">
+                            <div className="flex flex-row gap-2">{left.map(l => isTakenReady ? renderSeat(l) : <SeatProxy key={l} />)}</div>
                             <div className="w-8 h-10 flex items-center justify-center">
-                                {row === 0 && (
+                                {rowIndex === 0 && (
                                     <span className="text-[10px] text-gray-500 rotate-90 select-none">WALKWAY</span>
                                 )}
                             </div>
-                            <div className="flex flex-row gap-2">{right.map(renderSeat)}</div>
+                            <div className="flex flex-row gap-2">{right.map(l => isTakenReady ? renderSeat(l) : <SeatProxy key={l} />)}</div>
                         </div>
                     );
                 })}
@@ -194,20 +254,20 @@ const SeatSelection = () => {
             <div className="flex flex-col justify-center mt-2 text-lg font-bold text-center">
                 <div className="flex flex-row gap-1">
                     <p>Selected:</p>
-                    <span className="text-blue-300">{checkout?.seats.map(s => s.seatId).join(', ')}</span>
+                    <span className="text-blue-300">{checkout?.seats.map(s => s.seatNumber).join(', ')}</span>
                 </div>
                 <div className="flex flex-row justify-between gap-10 mt-2 text-lg font-bold text-center">
                     <button
-                        onClick={() => (router.back())}
+                        onClick={() => (router.push("/booking/ticket-selection"))}
                         className="flex-1 px-6 py-3 rounded-md bg-gray-600 text-white font-bold hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors duration-200 cursor-pointer"
                     >
-                        Back to Booking
+                        Back to Ticket Selection
                     </button>
                     <button
                         className="flex-1 px-6 py-3 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors duration-200 cursor-pointer"
                         onClick={handleSubmit}
                     >
-                        Confirm Details
+                        Checkout
                     </button>
                 </div>
             </div>
