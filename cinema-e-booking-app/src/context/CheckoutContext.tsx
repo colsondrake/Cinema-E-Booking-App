@@ -63,21 +63,47 @@ export const CheckoutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Map frontend Checkout to backend BookingRequestDTO shape
       // Backend expects enum names (ADULT, SENIOR, CHILD). Convert frontend
       // ticketType values (e.g. "adult") to uppercase before sending.
+      // Build a robust tickets array: prefer ticket.seatNumber, fall back to seats[] if needed.
+      const ticketsPayload = chk.tickets.map((t, idx) => {
+        let seatNumber = t.seatNumber;
+        if ((!seatNumber || seatNumber === "") && chk.seats && chk.seats[idx]) {
+          seatNumber = chk.seats[idx].seatNumber;
+        }
+        return {
+          seatNumber: String(seatNumber || ""),
+          ticketType: String(t.ticketType || "").toUpperCase(),
+        };
+      });
+
       const payload: any = {
         showtimeId: String(chk.showtimeId),
         userId: chk.userId || undefined,
         contactName: chk.name || undefined,
         contactEmail: chk.email || undefined,
-        tickets: chk.tickets.map((t) => ({
-          seatNumber: t.seatNumber,
-          ticketType: String(t.ticketType || "").toUpperCase(),
-        })),
+        tickets: ticketsPayload,
       };
+
+      // Include payment card info if available (backend supports PaymentCardDTO)
+      if (chk.card) {
+        payload.paymentCard = {
+          cardNumber: String(chk.card.cardNumber || "").replace(/\s+/g, ""),
+          expiry: chk.card.expiry || undefined,
+          cvv: chk.card.cvv || undefined,
+          id: chk.card.id || undefined,
+        };
+      }
 
       // Remove undefined keys to avoid unnecessary backend validation failures
       Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
 
-      const res = await fetch("http://localhost:8080/api/bookings", {
+      const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL as string) || "http://localhost:8080";
+      const url = apiBase.replace(/\/$/, "") + "/api/bookings";
+
+      // Debug: log payload (avoid logging full card numbers in production)
+      // eslint-disable-next-line no-console
+      console.debug("submitCheckout -> POST", url, { payload: { ...payload, paymentCard: payload.paymentCard ? { ...payload.paymentCard, cardNumber: payload.paymentCard.cardNumber ? "****REDACTED****" : undefined } : undefined } });
+
+      const res = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

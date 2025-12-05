@@ -47,10 +47,12 @@ const ConfirmBooking = () => {
             }
         }
 
-        // Set showtimeId only when it's not already set to avoid loops
-        if (showtime?.showtimeId) {
-            if (checkout?.showtimeId !== showtime.showtimeId) {
-                updateCheckoutField("showtimeId", showtime.showtimeId);
+        // Set showtimeId only when it's not already set to avoid loops.
+        // Prefer the backend (Mongo) `_id` when available, fall back to `_id` alias or business id.
+        const candidateShowtimeId = (showtime as any)?.id || (showtime as any)?._id || showtime?.showtimeId;
+        if (candidateShowtimeId) {
+            if (checkout?.showtimeId !== candidateShowtimeId) {
+                updateCheckoutField("showtimeId", String(candidateShowtimeId));
             }
         }
     }, [account, showtime, checkout?.showtimeId, checkout?.name, checkout?.email, checkout?.card, updateCheckoutField])
@@ -123,7 +125,7 @@ const ConfirmBooking = () => {
 
     // ------- Effects -------
     useEffect(() => {
-        if (submitted) router.push("/checkout/thank-you");
+        if (submitted) router.push("/booking/thank-you");
     }, [submitted, router]);
 
 

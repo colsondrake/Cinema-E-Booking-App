@@ -141,10 +141,7 @@ const MovieDetails = () => {
                     <button
                       key={key}
                       className="px-6 py-3 rounded-lg bg-blue-500 text-white text-lg font-semibold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer transition-all duration-150"
-                      onClick={() => {
-                        console.log(showtimes);
-                        handleSelectShowtime(st);
-                      }}
+                      onClick={() => handleSelectShowtime(st)}
                     >
                       {timeLabel}
                     </button>
